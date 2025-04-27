@@ -54,13 +54,31 @@ void btnTick(){
   lBtn.tick();
 }
 void setup() {
-  digitalWrite(PODXVAT,HIGH);
+  pinMode(A2,INPUT);
+  //digitalWrite(PODXVAT,HIGH);
   Serial.begin(9600);
   oled.init();        
-  oled.clear();       
+  oled.clear();
+         
 }
 
 void loop() {
   btnTick();
-  Settings();
+  //Settings();
+  if(lBtn.isClick()){
+    oled.clear();
+    oled.setCursor(0,0);
+    oled.print("lBTN");
+    }
+    if(rBtn.isClick()){
+    oled.clear();
+    oled.setCursor(0,0);
+    oled.print("rBTN");
+    }
+    if(OkBtn.isClick()){
+    oled.clear();
+    oled.setCursor(0,0);
+    oled.print("OkBTN");
+    }
+    
 }
