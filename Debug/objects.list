@@ -25,6 +25,7 @@
 "./Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_ll_usb.o"
 "./FATFS/App/fatfs.o"
 "./FATFS/Target/user_diskio.o"
+"./FATFS/Target/user_diskio_spi.o"
 "./Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Src/usbd_msc.o"
 "./Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Src/usbd_msc_bot.o"
 "./Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Src/usbd_msc_data.o"
