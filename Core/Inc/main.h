@@ -37,7 +37,23 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
+typedef enum {
+	DV_USB_SD,
+	DV_FIRMWARE,
+	DV_FUSE,
+	DV_CFG,
+	DV_EEPROM
+}dev_mode_t;
 
+typedef enum {
+	SC_INIT,
+	SC_SEL_MOD,
+	SC_SEL_MCU,
+	SC_SEL_FIRM,
+	SC_SEL_CFG,
+	SC_SEL_EEPR,
+	SC_PROGRESS,
+}screen_t;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -66,6 +82,7 @@ void Error_Handler(void);
 
 #define SD_SPI_HANDLE hspi1
 #define AVR_PROG_SPI_HANDLE hspi2
+#define DEBUG_UART_HANDLE huart1
 
 /* USER CODE END Private defines */
 
