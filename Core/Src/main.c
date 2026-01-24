@@ -32,6 +32,9 @@
 #include "ssd1306.h"
 #include "ssd1306_tests.h"
 #include <stdbool.h>
+
+#include "encBtn.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -94,11 +97,26 @@ FATFS fileSystem;
 
 screen_t sc_mod = SC_INIT;
 uint8_t firstInState = 1;
+const char* scNames[] = {
+	"SC_INIT",
+	"SC_SEL_MOD",
+	"SC_SEL_MCU",
+	"SC_SEL_FIRM",
+	"SC_SEL_CFG",
+	"SC_SEL_EEPR",
+	"SC_PROGRESS",
+
+	//ERRORS
+	"SC_SD_ERROR"
+};
 
 #define setNewState(new) changeScState(new,__LINE__)
 
 void changeScState(screen_t new, uint16_t line) {
-	//TODO print old state and new state
+	myprintf("Set new screen state on line %d!\n\r", line);
+	myprintf("  Old state: %s\n\r", scNames[sc_mod]);
+	myprintf("  New state: %s\n", scNames[new]);
+
 	sc_mod = new;
 	firstInState = 1;
 }
@@ -119,6 +137,8 @@ void scTick() {
 		break;
 	case SC_PROGRESS:
 		break;
+	case SC_SD_ERROR:
+		break;
 	default:
 		//TODO print unknown state
 		break;
@@ -127,10 +147,9 @@ void scTick() {
 	firstInState = 0;
 }
 
+button_t btnOK;
+encoder_t encoder;
 
-
-
-int currCounter;
 /* USER CODE END 0 */
 
 /**
@@ -172,9 +191,6 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
-
-
-
 //	while(f_mount(&fileSystem, "/", 1) != FR_OK) {
 //		myprintf("ERROR MOUNT SD\n");
 //		HAL_Delay(500);
@@ -184,18 +200,21 @@ int main(void)
 //	incChip();
 //	incChip();
 
-
-  HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
-
   //ssd1306_TestAll();
+
+  init_btn(&btnOK, BTN_OK_GPIO_Port, BTN_OK_Pin, true,true);
+  init_enc(&encoder, &htim3);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-		currCounter = __HAL_TIM_GET_COUNTER(&htim3);
+		btnTick(&btnOK);
+		encTick(&encoder);
+
 		scTick();
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -427,15 +446,15 @@ static void MX_TIM3_Init(void)
   htim3.Init.Period = 65535;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  sConfig.EncoderMode = TIM_ENCODERMODE_TI2;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
   sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
-  sConfig.IC1Prescaler = TIM_ICPSC_DIV2;
-  sConfig.IC1Filter = 2;
+  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC1Filter = 0;
   sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
-  sConfig.IC2Prescaler = TIM_ICPSC_DIV2;
-  sConfig.IC2Filter = 2;
+  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC2Filter = 0;
   if (HAL_TIM_Encoder_Init(&htim3, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -534,6 +553,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(AVR_PROG_SPI_SS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : BTN_OK_Pin */
+  GPIO_InitStruct.Pin = BTN_OK_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(BTN_OK_GPIO_Port, &GPIO_InitStruct);
 
 }
 

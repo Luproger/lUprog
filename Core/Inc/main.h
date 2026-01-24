@@ -54,6 +54,15 @@ typedef enum {
 	SC_SEL_EEPR,
 	SC_PROGRESS,
 }screen_t;
+
+typedef enum {
+	SD_INIT_ERROR;
+	SD_SYSTEM_ERROR;
+
+}error_t;
+
+extern const char* scNames[];
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -78,6 +87,8 @@ void Error_Handler(void);
 #define SD_CS_GPIO_Port GPIOA
 #define AVR_PROG_SPI_SS_Pin GPIO_PIN_12
 #define AVR_PROG_SPI_SS_GPIO_Port GPIOB
+#define BTN_OK_Pin GPIO_PIN_3
+#define BTN_OK_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 #define SD_SPI_HANDLE hspi1

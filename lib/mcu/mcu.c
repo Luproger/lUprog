@@ -58,7 +58,9 @@ void readChip(){
 	FRESULT res;
 
 	res = f_read(&chipFile, buf, CHIP_LINE_SIZE, &readByte);
-
+	if(res!=FR_OK){
+		myprintf("NOT READ CHIP ON MCU LIST\n");
+	}
 	int ptr = 0;
 	for(uint8_t i =0; i < (CHIP_LINE_SIZE-CHIP_NANE_LEN)/2 ;i++){
 		current.buf[ptr]=charToNum(buf[i*2])<<4 | charToNum(buf[i*2+1]);

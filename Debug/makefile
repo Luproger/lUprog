@@ -11,6 +11,7 @@ RM := rm -rf
 -include sources.mk
 -include lib/oled/subdir.mk
 -include lib/mcu/subdir.mk
+-include lib/encoder/subdir.mk
 -include USB_DEVICE/Target/subdir.mk
 -include USB_DEVICE/App/subdir.mk
 -include Middlewares/Third_Party/FatFs/src/option/subdir.mk

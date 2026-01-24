@@ -10,7 +10,6 @@
 
 #include "stdint.h"
 
-
 typedef struct{
 	uint8_t ee_reserved:1;
 	uint8_t ee_data_polling:1;
