@@ -36,8 +36,9 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Middlewares/Third_Party/FatFs/src/ff.h ../FATFS/Target/user_diskio.h \
  ../USB_DEVICE/App/usb_device.h \
  ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_def.h \
- ../USB_DEVICE/Target/usbd_conf.h \
+ ../USB_DEVICE/Target/usbd_conf.h ../Core/Inc/debug.h \
  C:/Users/progr/Desktop/lUprog/lib/mcu/mcu.h \
+ C:/Users/progr/Desktop/lUprog/lib/avr_programmer/AVR_Programmer.h \
  C:/Users/progr/Desktop/lUprog/lib/oled/ssd1306.h \
  C:/Users/progr/Desktop/lUprog/lib/oled/ssd1306_conf.h \
  C:/Users/progr/Desktop/lUprog/lib/oled/ssd1306_tests.h \
@@ -127,7 +128,11 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 
 ../USB_DEVICE/Target/usbd_conf.h:
 
+../Core/Inc/debug.h:
+
 C:/Users/progr/Desktop/lUprog/lib/mcu/mcu.h:
+
+C:/Users/progr/Desktop/lUprog/lib/avr_programmer/AVR_Programmer.h:
 
 C:/Users/progr/Desktop/lUprog/lib/oled/ssd1306.h:
 

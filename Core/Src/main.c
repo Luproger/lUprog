@@ -24,10 +24,11 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
-#include <stdio.h>
-#include <stdarg.h>
+#include "debug.h"
 #include "mcu.h"
+#include "AVR_Programmer.h"
+
+//#include "fsm.h"
 
 #include "ssd1306.h"
 #include "ssd1306_tests.h"
@@ -65,14 +66,7 @@ TIM_HandleTypeDef htim3;
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
-uint8_t printBufer[128];
-void myprintf(char *format, ...) {
-	va_list args;
-	va_start(args, format);
-	int len = vsnprintf((char*) printBufer, sizeof(printBufer), format, args);
-	va_end(args);
-	HAL_UART_Transmit(&huart1, printBufer, len, 1000);
-}
+
 
 /* USER CODE END PV */
 
@@ -88,67 +82,58 @@ static void MX_I2C1_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
 FATFS fileSystem;
+FIL firmware;
 
-screen_t sc_mod = SC_INIT;
-uint8_t firstInState = 1;
-const char* scNames[] = {
-	"SC_INIT",
-	"SC_SEL_MOD",
-	"SC_SEL_MCU",
-	"SC_SEL_FIRM",
-	"SC_SEL_CFG",
-	"SC_SEL_EEPR",
-	"SC_PROGRESS",
+button_t btnStart;
 
-	//ERRORS
-	"SC_SD_ERROR"
-};
+avr_prog_init_t prog;
+avr_prog_param_t param;
 
-#define setNewState(new) changeScState(new,__LINE__)
+//void menuTick() {
+//	switch (Menu) {
+//	case MENU_SEL_MOD:
+//		break;
+//	case MENU_SEL_MCU:
+//		break;
+//	case MENU_SEL_FIRM:
+//		break;
+//	case MENU_SEL_CFG:
+//		break;
+//	case MENU_SEL_EEPR:
+//		break;
+//	case MENU_PROGRESS:
+//		break;
+//	default:
+//		//TODO print unknown state
+//		break;
+//	}
+//
+//	firstInState = 0;
+//}
+//
+//void stateTick() {
+//	switch(devState) {
+//	case DV_INIT:
+//		break;
+//	case DV_MENU:
+//		break;
+//	case DV_ERROR:
+//		break;
+//	case DV_SLEEP:
+//		break;
+//	default:
+//		//TODO print unknown state
+//		break;
+//	}
+//}
 
-void changeScState(screen_t new, uint16_t line) {
-	myprintf("Set new screen state on line %d!\n\r", line);
-	myprintf("  Old state: %s\n\r", scNames[sc_mod]);
-	myprintf("  New state: %s\n", scNames[new]);
-
-	sc_mod = new;
-	firstInState = 1;
-}
-
-void scTick() {
-	switch (sc_mod) {
-	case SC_INIT:
-		break;
-	case SC_SEL_MOD:
-		break;
-	case SC_SEL_MCU:
-		break;
-	case SC_SEL_FIRM:
-		break;
-	case SC_SEL_CFG:
-		break;
-	case SC_SEL_EEPR:
-		break;
-	case SC_PROGRESS:
-		break;
-	case SC_SD_ERROR:
-		break;
-	default:
-		//TODO print unknown state
-		break;
-	}
-
-	firstInState = 0;
-}
-
-button_t btnOK;
-encoder_t encoder;
 
 /* USER CODE END 0 */
 
@@ -190,30 +175,46 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+  DEBUG_INIT(&huart1);
 
-//	while(f_mount(&fileSystem, "/", 1) != FR_OK) {
-//		myprintf("ERROR MOUNT SD\n");
-//		HAL_Delay(500);
+  init_btn(&btnStart, BUTTON_GPIO_Port, BUTTON_Pin, true, true);
+  AVR_Programmer_Init(&prog, &hspi2, AVR_PROG_SPI_SS_Pin, AVR_PROG_SPI_SS_GPIO_Port);
+
+	openChipList();
+
+//
+//	FRESULT res;
+//	res = f_open(&firmware, (char*) "BL_1.BIN", FA_READ);
+//	if(res!=FR_OK){
+//		DEBUG_PRINTF("NOT OPEN FIRMWARE FILE! \n");
+//		while(1);
 //	}
-//	openChipList();
-//	incChip();
-//	incChip();
-//	incChip();
+//	DEBUG_PRINTF("Open firmware file! \n");
+//	param.file = &firmware;
+//
+//	flash_AVR(&prog, &param);
 
-  //ssd1306_TestAll();
 
-  init_btn(&btnOK, BTN_OK_GPIO_Port, BTN_OK_Pin, true,true);
-  init_enc(&encoder, &htim3);
+//	avr_prog_protocol_t iface;
+//	iface.name = AVR_PROG_SPI;
+//	iface.settings.spi.sck_div = SPI_BAUDRATEPRESCALER_128;
+//
+//	avr_progStatus res = AVR_WarmUpToProgram(&param,"test.bin",getChip(),&iface);
+//
+//	if(res!=A_OK){
+//		__asm("NOP");
+//	}
+
+
+
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-		btnTick(&btnOK);
-		encTick(&encoder);
+		btnTick(&btnStart);
 
-		scTick();
 
     /* USER CODE END WHILE */
 
@@ -362,7 +363,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -535,23 +536,24 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(AVR_PROG_SPI_SS_GPIO_Port, AVR_PROG_SPI_SS_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin : SD_CS_Pin */
   GPIO_InitStruct.Pin = SD_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(SD_CS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : BUTTON_Pin */
+  GPIO_InitStruct.Pin = BUTTON_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(BUTTON_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : AVR_PROG_SPI_SS_Pin */
   GPIO_InitStruct.Pin = AVR_PROG_SPI_SS_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   HAL_GPIO_Init(AVR_PROG_SPI_SS_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : BTN_OK_Pin */

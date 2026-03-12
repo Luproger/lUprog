@@ -50,6 +50,7 @@ typedef union{
 void decChip();
 void incChip();
 void readChip();
+mcu_t *getChip();
 void openChipList();
 void closeChipList();
 

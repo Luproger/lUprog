@@ -9,6 +9,7 @@
 #include "stdlib.h"
 #include "string.h"
 #include "ff.h"
+#include "debug.h"
 
 FIL chipFile;
 mcu_t_u current;
@@ -23,8 +24,9 @@ void openChipList(){
 
 	res = f_open(&chipFile, (char*) "system/LIST.TXT", FA_READ);
 	if(res!=FR_OK){
-		myprintf("NOT OPEN FILE MCU LIST\n");
+		DEBUG_PRINTF("NOT OPEN FILE MCU LIST! \n");
 	}
+	DEBUG_PRINTF("Open file mcu list! \n");
 	chip_index=0;
 	readChip();
 }
@@ -59,7 +61,7 @@ void readChip(){
 
 	res = f_read(&chipFile, buf, CHIP_LINE_SIZE, &readByte);
 	if(res!=FR_OK){
-		myprintf("NOT READ CHIP ON MCU LIST\n");
+		DEBUG_PRINTF("NOT READ CHIP ON MCU LIST! \n");
 	}
 	int ptr = 0;
 	for(uint8_t i =0; i < (CHIP_LINE_SIZE-CHIP_NANE_LEN)/2 ;i++){
@@ -70,8 +72,13 @@ void readChip(){
 			current.buf[ptr]=buf[i];
 			ptr++;
 	}
-	myprintf("test");
+	DEBUG_PRINTF("Chip Read! \n");
 }
+
+mcu_t *getChip(){
+	return &current.mcu;
+}
+
 void incChip(){
 	if(chip_index<(chipFile.fsize/CHIP_LINE_SIZE)-1){
 		chip_index++;

@@ -10,8 +10,11 @@ RM := rm -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include lib/oled/subdir.mk
+-include lib/menu/subdir.mk
 -include lib/mcu/subdir.mk
+-include lib/fsm/subdir.mk
 -include lib/encoder/subdir.mk
+-include lib/avr_programmer/subdir.mk
 -include USB_DEVICE/Target/subdir.mk
 -include USB_DEVICE/App/subdir.mk
 -include Middlewares/Third_Party/FatFs/src/option/subdir.mk
@@ -23,6 +26,7 @@ RM := rm -rf
 -include Drivers/STM32F1xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
+-include Core/Inc/subdir.mk
 -include subdir.mk
 -include objects.mk
 

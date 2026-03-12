@@ -37,31 +37,6 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-typedef enum {
-	DV_USB_SD,
-	DV_FIRMWARE,
-	DV_FUSE,
-	DV_CFG,
-	DV_EEPROM
-}dev_mode_t;
-
-typedef enum {
-	SC_INIT,
-	SC_SEL_MOD,
-	SC_SEL_MCU,
-	SC_SEL_FIRM,
-	SC_SEL_CFG,
-	SC_SEL_EEPR,
-	SC_PROGRESS,
-}screen_t;
-
-typedef enum {
-	SD_INIT_ERROR;
-	SD_SYSTEM_ERROR;
-
-}error_t;
-
-extern const char* scNames[];
 
 /* USER CODE END ET */
 
@@ -85,6 +60,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define SD_CS_Pin GPIO_PIN_4
 #define SD_CS_GPIO_Port GPIOA
+#define BUTTON_Pin GPIO_PIN_11
+#define BUTTON_GPIO_Port GPIOB
 #define AVR_PROG_SPI_SS_Pin GPIO_PIN_12
 #define AVR_PROG_SPI_SS_GPIO_Port GPIOB
 #define BTN_OK_Pin GPIO_PIN_3
@@ -92,7 +69,6 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 
 #define SD_SPI_HANDLE hspi1
-#define AVR_PROG_SPI_HANDLE hspi2
 #define DEBUG_UART_HANDLE huart1
 
 /* USER CODE END Private defines */

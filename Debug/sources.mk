@@ -20,6 +20,7 @@ OBJCOPY_BIN :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
+Core/Inc \
 Core/Src \
 Core/Startup \
 Drivers/STM32F1xx_HAL_Driver/Src \
@@ -31,7 +32,10 @@ Middlewares/Third_Party/FatFs/src \
 Middlewares/Third_Party/FatFs/src/option \
 USB_DEVICE/App \
 USB_DEVICE/Target \
+lib/avr_programmer \
 lib/encoder \
+lib/fsm \
 lib/mcu \
+lib/menu \
 lib/oled \
 
