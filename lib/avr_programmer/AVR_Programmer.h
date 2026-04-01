@@ -20,96 +20,152 @@
 #include <stdint.h>
 
 
-#define PGM_ENABLE_1 0xAC
-#define PGM_ENABLE_2 0x53
-#define SIGNATURE_READ 0x30
-#define CHIP_ERASE 0xAC
-#define ERASE_PARAM 0x80
-#define LOAD_EXT_ADDR 0x4D
-#define WRITE_LOW_BYTE 0x40
-#define WRITE_HIGH_BYTE 0x48
-#define COMMIT_PAGE 0x4C
-#define READ_FLASH 0x20
-#define WRITE_LOCK 0xAC
-#define LOCK_PARAM 0xE0
-#define WRITE_FUSE 0xAC
-#define WRITE_FUSE_HIGH 0xA8
-#define WRITE_EXT_FUSE 0xA4
+typedef enum{
+	AVP_OK,
+
+	// INIT AVR_PROGRAMMER
+	AVP_ERR_INIT_CONF,
+	AVP_ERR_MISSING_INIT,
+
+	// INIT SESSION
+	AVP_ERR_NULL_MCU,
+	AVP_ERR_NULL_PATH,
+	AVP_ERR_NULL_PROTO,
+	AVP_ERR_FILE_NOT_CLOSED,
+	AVP_ERR_WRONG_FILE_FORMAT,
+	AVP_ERR_SPI_BOUDRATE,
+
+	AVP_ERR_WRONG_ACTION,
+
+	// SD CARD ERROR
+	AVP_POINT_SD_CARD_ERR,
+
+	AVP_FR_DISK_ERR,
+	AVP_FR_INT_ERR,
+	AVP_FR_NOT_READY,
+	AVP_FR_NO_FILE,
+	AVP_FR_NO_PATH,
+	AVP_FR_INVALID_NAME,
+	AVP_FR_DENIED,
+	AVP_FR_EXIST,
+	AVP_FR_INVALID_OBJECT,
+	AVP_FR_WRITE_PROTECTED,
+	AVP_FR_INVALID_DRIVE,
+	AVP_FR_NOT_ENABLED,
+	AVP_FR_NO_FILESYSTEM,
+	AVP_FR_MKFS_ABORTED,
+	AVP_FR_TIMEOUT,
+	AVP_FR_LOCKED,
+	AVP_FR_NOT_ENOUGH_CORE,
+	AVP_FR_TOO_MANY_OPEN_FILES,
+	AVP_FR_INVALID_PARAMETER,
+
+	// PROGRAMMING ERROR
+
+	AVP_ERR_ENTER_PMODE,
+	AVP_ERR_CHECK_SIG,
+
+
+} avp_status;
+extern const char *status_mes[];
+
+typedef enum{
+	// FLASH
+	ACT_FL_WRITE,
+	ACT_FL_READ,
+	ACT_FL_VERIFY,
+
+	// EEPROM
+	ACT_EE_WRITE,
+	ACT_EE_READ,
+	ACT_EE_VERIFY,
+
+	// FUSEBIT
+	ACT_FB_WRITE,
+	ACT_FB_DEFAULT,
+	ACT_FB_READ,
+	ACT_FB_VERIFY,
+
+	// LOCKBIT
+	ACT_LB_WRITE,
+	ACT_LB_READ,
+	ACT_LB_VERIFY,
+
+	// CONFIG
+	ACT_CFG_WRITE,
+	ACT_CFG_READ,
+	ACT_CFG_VERIFY
+
+	// BOOTLOADER
+}avp_action;
+
+typedef void (*exCallback)();
+typedef avp_status (*avrFunc)(void);
+typedef void (*errCalback)(avp_status err, char* message);
 
 typedef struct{
+	exCallback prog_cb;
+	errCalback err_cb;
 	SPI_HandleTypeDef *hspi;
 	uint16_t CS_Pin;
 	GPIO_TypeDef *CS_Port;
-}avr_prog_init_t;
+
+}avp_init_t;
 
 typedef struct{
 	uint32_t baudRate;
-}avr_prog_uart_settings_t;
+}avp_uart_conf;
 
 typedef struct{
-	bool auto_sck_speed;
-	uint16_t sck_div;
-}avr_prog_spi_settings_t;
-
-typedef union{
-	avr_prog_spi_settings_t spi;
-	avr_prog_uart_settings_t uart;
-}avr_prog_protocol_u;
-
-typedef enum{
-	AVR_PROG_SPI,
-	AVR_PROG_UART
-}avr_prog_protocol_e;
-
-typedef struct {
-	avr_prog_protocol_e name;
-	avr_prog_protocol_u settings;
-}avr_prog_protocol_t;
+	bool sck_auto;
+	uint32_t sck_div;
+}avp_spi_conf;
 
 typedef struct {
 	char *path;
-	FIL *file;
 	mcu_t *mcu;
-	avr_prog_protocol_t *protocol;
 
-} avr_prog_param_t;
+} avp_param_t;
 
+avp_status AVP_Init(const avp_init_t *avrprog);
+void AVP_Set_SPI(avp_spi_conf *conf);
+void AVP_Set_UART(avp_uart_conf *conf);
+avp_status AVP_Execute(avp_action action, avp_param_t *_param);
 
-typedef enum{
-	A_OK,
-	A_ERR_NULL_MCU = -1,
-	A_ERR_NULL_PATH = -2,
-	A_ERR_NULL_PROTOCOL =-3,
-	A_ERR_FILE_NOT_CLOSED = -4,
-	A_ERR_SPI_CONFIG = -5,
-	A_ERR_OPEN_FILE = -6,
-	//FR_DISK_ERR = -7,
-	//.....
-	//FR_INVALID_PARAMETER =-26
+avp_status Init_Session(avp_action action, avp_param_t *_param);
+avp_status Close_Session();
 
+avp_status null_actFunc();
 
-} avr_progStatus;
+// INIT
+avp_status spi_check_conf();
+avp_status spi_prog_init();
+void spi_prog_deinit();
 
-void AVR_Programmer_Init(avr_prog_init_t *prog, SPI_HandleTypeDef *hspi, uint16_t CS_Pin, GPIO_TypeDef *CS_Port);
+// FLASH
+avp_status spi_fl_Write();
+avp_status spi_fl_Read();
+avp_status spi_fl_Verify();
 
-avr_progStatus AVR_WarmUpToProgram(avr_prog_param_t *param,char *fname,mcu_t *mcu,avr_prog_protocol_t *protocol);
+// EEPROM
+avp_status spi_ee_Write();
+avp_status spi_ee_Read();
+avp_status spi_ee_Verify();
 
-void spi_enable(avr_prog_init_t *prog, avr_prog_param_t *params);
-void spi_disable(avr_prog_init_t *prog);
-uint8_t spi_send_byte(SPI_HandleTypeDef *hspi, uint8_t byte);
-uint8_t spi_send_cmd(SPI_HandleTypeDef *hspi, uint8_t a, uint8_t b, uint8_t c, uint8_t d);
+// FUSEBIT
+avp_status spi_fb_Write();
+avp_status spi_fb_Read();
+avp_status spi_fb_Verify();
 
-void flash_AVR(avr_prog_init_t *prog, avr_prog_param_t *params);
+// LOCKBIT
+avp_status spi_lb_Write();
+avp_status spi_lb_Read();
+avp_status spi_lb_Verify();
 
-bool enterProgrammingMode(avr_prog_init_t *prog, avr_prog_param_t *params);
-void leaveProgrammingMode();
+// CONFIG
+avp_status spi_cfg_Write();
+avp_status spi_cfg_Read();
+avp_status spi_cfg_Verify();
 
-bool checkSignature();
-void chipErase(SPI_HandleTypeDef *hspi, uint8_t chip_erase_delay);
-
-void f_write_page(SPI_HandleTypeDef *hspi, uint32_t *page_word_addr);
-void f_commit(SPI_HandleTypeDef *hspi, uint32_t addr);
-uint8_t read_flash(uint8_t hilo, uint32_t word);
-bool f_bsy_check();
 
 #endif /* AVR_PROGRAMMER_AVR_PROGRAMMER_H_ */

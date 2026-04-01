@@ -29,14 +29,15 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_ll_usb.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd_ex.h \
- ../FATFS/App/fatfs.h ../Middlewares/Third_Party/FatFs/src/ff.h \
+ ../Core/Inc/debug.h ../FATFS/App/fatfs.h \
+ ../Middlewares/Third_Party/FatFs/src/ff.h \
  ../Middlewares/Third_Party/FatFs/src/integer.h ../FATFS/Target/ffconf.h \
  ../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h \
  ../Middlewares/Third_Party/FatFs/src/diskio.h \
  ../Middlewares/Third_Party/FatFs/src/ff.h ../FATFS/Target/user_diskio.h \
  ../USB_DEVICE/App/usb_device.h \
  ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_def.h \
- ../USB_DEVICE/Target/usbd_conf.h ../Core/Inc/debug.h \
+ ../USB_DEVICE/Target/usbd_conf.h \
  C:/Users/progr/Desktop/lUprog/lib/mcu/mcu.h \
  C:/Users/progr/Desktop/lUprog/lib/avr_programmer/AVR_Programmer.h \
  C:/Users/progr/Desktop/lUprog/lib/oled/ssd1306.h \
@@ -106,6 +107,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd_ex.h:
 
+../Core/Inc/debug.h:
+
 ../FATFS/App/fatfs.h:
 
 ../Middlewares/Third_Party/FatFs/src/ff.h:
@@ -127,8 +130,6 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_def.h:
 
 ../USB_DEVICE/Target/usbd_conf.h:
-
-../Core/Inc/debug.h:
 
 C:/Users/progr/Desktop/lUprog/lib/mcu/mcu.h:
 

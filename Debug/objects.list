@@ -44,6 +44,7 @@
 "./USB_DEVICE/App/usbd_storage_if.o"
 "./USB_DEVICE/Target/usbd_conf.o"
 "./lib/avr_programmer/AVR_Programmer.o"
+"./lib/avr_programmer/avr_spi.o"
 "./lib/encoder/encBtn.o"
 "./lib/fsm/fsm.o"
 "./lib/mcu/mcu.o"

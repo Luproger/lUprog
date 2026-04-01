@@ -36,7 +36,7 @@ FATFS/Target/user_diskio_spi.o: ../FATFS/Target/user_diskio_spi.c \
  ../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h \
  ../Middlewares/Third_Party/FatFs/src/diskio.h \
  ../Middlewares/Third_Party/FatFs/src/ff.h ../FATFS/Target/ffconf.h \
- ../Core/Inc/main.h
+ ../Core/Inc/main.h ../Core/Inc/debug.h
 
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h:
 
@@ -115,3 +115,5 @@ FATFS/Target/user_diskio_spi.o: ../FATFS/Target/user_diskio_spi.c \
 ../FATFS/Target/ffconf.h:
 
 ../Core/Inc/main.h:
+
+../Core/Inc/debug.h:

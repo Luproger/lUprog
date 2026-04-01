@@ -31,7 +31,7 @@ lib/mcu/mcu.o: ../lib/mcu/mcu.c ../lib/mcu/mcu.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_ll_usb.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd_ex.h \
- ../Core/Inc/debug.h
+ ../Core/Inc/debug.h ../Core/Inc/debug.h
 
 ../lib/mcu/mcu.h:
 
@@ -102,5 +102,7 @@ lib/mcu/mcu.o: ../lib/mcu/mcu.c ../lib/mcu/mcu.h \
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_ll_usb.h:
 
 ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd_ex.h:
+
+../Core/Inc/debug.h:
 
 ../Core/Inc/debug.h:

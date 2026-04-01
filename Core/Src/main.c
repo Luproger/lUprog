@@ -24,7 +24,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "debug.h"
 #include "mcu.h"
 #include "AVR_Programmer.h"
 
@@ -81,8 +80,22 @@ static void MX_TIM2_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
+void temp_callback(){};
+void temp_err_cb(avp_status err, char* message){
+	DEBUG_PRINTF("SESIION ERROR: ");
+	DEBUG_PRINTF(status_mes[err]);
+	DEBUG_PRINTF("\n");
+};
+void SPIBitBang(){
+	uint8_t a[4] = {0xAC, 0x53, 0x00, 0x00};
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+	HAL_Delay(200);
 
+	HAL_SPI_Transmit(&hspi2, &a, 4, 1);
 
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -93,47 +106,19 @@ FIL firmware;
 
 button_t btnStart;
 
-avr_prog_init_t prog;
-avr_prog_param_t param;
+static const avp_init_t avrprog = {
+	.prog_cb = &temp_callback,
+	.err_cb = &temp_err_cb,
+	.hspi = &hspi2,
+	.CS_Pin = AVR_PROG_SPI_SS_Pin,
+	.CS_Port = AVR_PROG_SPI_SS_GPIO_Port
+};
 
-//void menuTick() {
-//	switch (Menu) {
-//	case MENU_SEL_MOD:
-//		break;
-//	case MENU_SEL_MCU:
-//		break;
-//	case MENU_SEL_FIRM:
-//		break;
-//	case MENU_SEL_CFG:
-//		break;
-//	case MENU_SEL_EEPR:
-//		break;
-//	case MENU_PROGRESS:
-//		break;
-//	default:
-//		//TODO print unknown state
-//		break;
-//	}
-//
-//	firstInState = 0;
-//}
-//
-//void stateTick() {
-//	switch(devState) {
-//	case DV_INIT:
-//		break;
-//	case DV_MENU:
-//		break;
-//	case DV_ERROR:
-//		break;
-//	case DV_SLEEP:
-//		break;
-//	default:
-//		//TODO print unknown state
-//		break;
-//	}
-//}
-
+avp_param_t param;
+avp_spi_conf spiConf = {
+	.sck_auto = false,
+	.sck_div = SPI_BAUDRATEPRESCALER_256
+};
 
 /* USER CODE END 0 */
 
@@ -175,37 +160,35 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+  FATFS fs;
+  FRESULT fres;
+  avp_status res;
+
   DEBUG_INIT(&huart1);
+  DEBUG_PRINTF(" \n");
 
   init_btn(&btnStart, BUTTON_GPIO_Port, BUTTON_Pin, true, true);
-  AVR_Programmer_Init(&prog, &hspi2, AVR_PROG_SPI_SS_Pin, AVR_PROG_SPI_SS_GPIO_Port);
+  res = AVP_Init(&avrprog);
+  if(res != AVP_OK){
+	DEBUG_PRINTF("AVR Programmer not init!");
+	while(1);
+  }
 
-	openChipList();
+  fres = f_mount(&fs, "", 1);
+  if(fres != FR_OK){
+	 DEBUG_PRINTF("SD Card mount error!");
+	 while(1);
+  }
+  DEBUG_PRINTF("SD Card mounted\n");
+  param.path = "BL_1.BIN";
 
-//
-//	FRESULT res;
-//	res = f_open(&firmware, (char*) "BL_1.BIN", FA_READ);
-//	if(res!=FR_OK){
-//		DEBUG_PRINTF("NOT OPEN FIRMWARE FILE! \n");
-//		while(1);
-//	}
-//	DEBUG_PRINTF("Open firmware file! \n");
-//	param.file = &firmware;
-//
-//	flash_AVR(&prog, &param);
+  openChipList();
+  param.mcu = getChip();
 
+  AVP_Set_SPI(&spiConf);
 
-//	avr_prog_protocol_t iface;
-//	iface.name = AVR_PROG_SPI;
-//	iface.settings.spi.sck_div = SPI_BAUDRATEPRESCALER_128;
-//
-//	avr_progStatus res = AVR_WarmUpToProgram(&param,"test.bin",getChip(),&iface);
-//
-//	if(res!=A_OK){
-//		__asm("NOP");
-//	}
-
-
+//  DEBUG_PRINTF("START EXECUTE");
+  AVP_Execute(ACT_FL_WRITE, &param);
 
 
   /* USER CODE END 2 */
@@ -252,7 +235,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV2;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 

@@ -92,6 +92,8 @@ void HardFault_Handler(void)
   while (1)
   {
     /* USER CODE BEGIN W1_HardFault_IRQn 0 */
+	  DEBUG_PRINTF("HARDFAULT ERROR!!!\n");
+	  HAL_Delay(2000);
     /* USER CODE END W1_HardFault_IRQn 0 */
   }
 }
