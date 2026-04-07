@@ -204,7 +204,7 @@ static const avp_init_t *avr_prog;
 avp_param_t *param;
 
 avp_status sRes;
-char *errMessage;
+char errMessage[64];
 
 FIL firmwareFile = {0};
 
@@ -398,7 +398,8 @@ avp_status Close_Session(){
 	}
 
 	avr_prog->err_cb(sRes, errMessage);
-	errMessage = "";
+	memset(errMessage, 0, sizeof(errMessage));
+
 	DEBUG_PRINTF("\n----------------- SESSION CLOSED ----------------- \n");
 
 	return sRes;
@@ -450,10 +451,31 @@ avp_status enterPMode(){
 	if(spiConf->sck_auto){
 
 	}
-	spi_enable();
+//	GPIO_InitTypeDef GPIO_InitStruct = {0};
+//	__HAL_RCC_GPIOB_CLK_ENABLE();
+//
+//    GPIO_InitStruct.Pin = avr_prog->CS_Pin;
+//    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+//    GPIO_InitStruct.Pull = GPIO_NOPULL;
+//    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+//    HAL_GPIO_Init(avr_prog->CS_Port, &GPIO_InitStruct);
+//
+//	// Настраиваем SCK (PB13) как обычный выход, чтобы принудительно прижать к 0
+//	GPIO_InitStruct.Pin = GPIO_PIN_13;
+//	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+//
+//	// 2. Устанавливаем уровни согласно рекомендации Atmel
+//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET); // SCK = 0
+//	HAL_Delay(10);
 
+	spi_enable();
+	spi_send_byte(0X00);
+	HAL_Delay(10);
+
+	// Входим в режим программирования: RESET в 0 при SCK = 0
 	HAL_GPIO_WritePin(avr_prog->CS_Port, avr_prog->CS_Pin, GPIO_PIN_RESET);
-	HAL_Delay(200);
+	HAL_Delay(25); // Ждем стабилизации (минимум 20мс)
+
 
 	spi_send_byte(PGM_ENABLE_1);
 	spi_send_byte(PGM_ENABLE_2);
@@ -462,7 +484,7 @@ avp_status enterPMode(){
 
 	if (response != 0x53)
 	  {
-		errMessage = "";
+		strcpy(errMessage, "AVP_ERR_ENTER_PMODE");
 	    return AVP_ERR_ENTER_PMODE;
 	  }
 
@@ -483,7 +505,7 @@ avp_status checkSignature(){
 	    return AVP_OK;
 	}
 
-	sprintf(errMessage, "0x%02X 0x%02X 0x%02X", sig1, sig2, sig3);
+	snprintf(errMessage, sizeof(errMessage), "0x%02X 0x%02X 0x%02X", sig1, sig2, sig3);
 
 	return AVP_ERR_CHECK_SIG;
 
