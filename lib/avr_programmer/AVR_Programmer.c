@@ -321,7 +321,6 @@ avp_ftype get_ftype(char *fpath){
 }
 
 avp_status AVP_Init(const avp_init_t *avrprog){
-	DEBUG_PRINTF("AVP INIT:	");
 	if(avrprog == NULL
 	|| avrprog->prog_cb == NULL
 	|| avrprog->err_cb == NULL
@@ -329,13 +328,15 @@ avp_status AVP_Init(const avp_init_t *avrprog){
 	|| avrprog->CS_Port == NULL
 	|| !IS_GPIO_PIN(avrprog->CS_Pin)
 	|| !IS_GPIO_ALL_INSTANCE(avrprog->CS_Port)){
-		DEBUG_PRINTF("ERR\n");
+
+		DEBUG_PRINTF("AVP INIT: ERR\n");
 		return AVP_ERR_INIT_CONF;
 	}
 
 	avr_prog = avrprog;
 	spi_disable();
-	DEBUG_PRINTF("OK\n");
+
+	DEBUG_PRINTF("AVP INIT: OK\n");
 	return AVP_OK;
 }
 
@@ -441,7 +442,7 @@ avp_status Init_Session(avp_action action, avp_param_t *_param){
 	param = _param;
 	f_page_size_b = param->mcu->flash_page_size * 2;
 
-	DEBUG_PRINTF("INIT SESSION:	OK");
+	DEBUG_PRINTF("INIT SESSION: OK\n");
 	DEBUG_PRINTF("\n----------------- SESSION OPEN ----------------- \n\n");
 	return AVP_OK;
 }
@@ -451,30 +452,13 @@ avp_status enterPMode(){
 	if(spiConf->sck_auto){
 
 	}
-//	GPIO_InitTypeDef GPIO_InitStruct = {0};
-//	__HAL_RCC_GPIOB_CLK_ENABLE();
-//
-//    GPIO_InitStruct.Pin = avr_prog->CS_Pin;
-//    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-//    GPIO_InitStruct.Pull = GPIO_NOPULL;
-//    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-//    HAL_GPIO_Init(avr_prog->CS_Port, &GPIO_InitStruct);
-//
-//	// Настраиваем SCK (PB13) как обычный выход, чтобы принудительно прижать к 0
-//	GPIO_InitStruct.Pin = GPIO_PIN_13;
-//	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-//
-//	// 2. Устанавливаем уровни согласно рекомендации Atmel
-//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET); // SCK = 0
-//	HAL_Delay(10);
 
 	spi_enable();
 	spi_send_byte(0X00);
-	HAL_Delay(10);
+	HAL_Delay(5);
 
-	// Входим в режим программирования: RESET в 0 при SCK = 0
 	HAL_GPIO_WritePin(avr_prog->CS_Port, avr_prog->CS_Pin, GPIO_PIN_RESET);
-	HAL_Delay(25); // Ждем стабилизации (минимум 20мс)
+	HAL_Delay(25);
 
 
 	spi_send_byte(PGM_ENABLE_1);
@@ -488,20 +472,20 @@ avp_status enterPMode(){
 	    return AVP_ERR_ENTER_PMODE;
 	  }
 
-	DEBUG_PRINTF("	ENTER_PMODE! \n");
+	DEBUG_PRINTF("ENTER_PMODE\n");
 	return AVP_OK;
 }
 
 avp_status checkSignature(){
 
 	uint8_t sig1 = spi_send_cmd(SIGNATURE_READ, 0x00, 0x00, 0x00);
-	uint8_t sig2 = spi_send_cmd(SIGNATURE_READ, 0x00, 0x00, 0x00);
-	uint8_t sig3 = spi_send_cmd(SIGNATURE_READ, 0x00, 0x00, 0x00);
+	uint8_t sig2 = spi_send_cmd(SIGNATURE_READ, 0x00, 0x01, 0x00);
+	uint8_t sig3 = spi_send_cmd(SIGNATURE_READ, 0x00, 0x02, 0x00);
 
 	if (sig1 == param->mcu->sig[0]
 		&& sig2 == param->mcu->sig[1]
 		&& sig3 == param->mcu->sig[2]){
-		DEBUG_PRINTF("CHECK SIGNATURE COMPLETE!\n");
+		DEBUG_PRINTF("CHECK SIGNATURE OK\n");
 	    return AVP_OK;
 	}
 
@@ -527,7 +511,7 @@ avp_status spi_prog_init(){
 
 	chipErase(); // Стираем чип
 
-	DEBUG_PRINTF("PROGRAM MODE INIT");
+	DEBUG_PRINTF("PROGRAM MODE INIT\n");
 	return AVP_OK;
 }
 
@@ -561,54 +545,3 @@ avp_status spi_lb_Verify(){}
 avp_status spi_cfg_Write(){}
 avp_status spi_cfg_Read(){}
 avp_status spi_cfg_Verify(){}
-
-//void programmFileBin(){
-//
-//}
-//
-//void fill_flash_buf(FIL *file){
-//	static UINT br;
-//
-//	FRESULT res = f_read(file, flash_buf, f_page_size_b, &br);
-//
-//	if(res != FR_OK){
-//	  // TODO return
-//	}
-//	if(br != f_page_size_b){ // Если файл закончился
-//
-//		for(uint16_t i = br; i < f_page_size_b; i++){
-//			flash_buf[i] = 0xFF;
-//		}
-//		// TODO return
-//	}
-//
-//	// TODO return
-//}
-//
-//
-//void f_write_page(SPI_HandleTypeDef *hspi, uint32_t *page_word_addr){
-//	uint16_t word = 0;
-//
-//	int x = 0;
-//	while (x < f_page_size_b)
-//	{
-//	// Пишем младший и старший байты слова
-//	spi_send_cmd(hspi, WRITE_LOW_BYTE, word >> 8, word & 0xFF, flash_buf[x++]);
-//	spi_send_cmd(hspi, WRITE_HIGH_BYTE, word >> 8, word & 0xFF, flash_buf[x++]);
-//
-//	word++;
-//	}
-//	f_commit(hspi, *page_word_addr);
-//}
-//
-//void f_commit(SPI_HandleTypeDef *hspi, uint32_t addr){
-//	spi_send_cmd(hspi, COMMIT_PAGE, addr >> 8, addr & 0xFF, 0);
-//}
-//
-//bool f_bsy_check(){
-//	return 1;
-//}
-//
-//
-
-
