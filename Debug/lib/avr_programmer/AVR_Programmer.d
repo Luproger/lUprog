@@ -34,7 +34,7 @@ lib/avr_programmer/AVR_Programmer.o: \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_ll_usb.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pcd_ex.h \
  ../Core/Inc/debug.h C:/Users/progr/Desktop/lUprog/lib/mcu/mcu.h \
- ../Core/Inc/debug.h
+ ../Core/Inc/debug.h ../lib/avr_programmer/error_list.h
 
 ../lib/avr_programmer/AVR_Programmer.h:
 
@@ -111,3 +111,5 @@ lib/avr_programmer/AVR_Programmer.o: \
 C:/Users/progr/Desktop/lUprog/lib/mcu/mcu.h:
 
 ../Core/Inc/debug.h:
+
+../lib/avr_programmer/error_list.h:

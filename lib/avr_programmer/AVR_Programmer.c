@@ -7,7 +7,11 @@
 #include "AVR_Programmer.h"
 #include "stm32f1xx_hal.h"
 #include "debug.h"
+ #include "error_list.h"
+
 #include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 
 #define PGM_ENABLE_1 0xAC
@@ -63,51 +67,6 @@ static const uint8_t file_supp[ACTION_MAX] = {
 	[ACT_CFG_WRITE] = AVP_FTYPE_CFG,
 	[ACT_CFG_READ] = AVP_FTYPE_CFG,
 	[ACT_CFG_VERIFY] = AVP_FTYPE_CFG
-};
-
-const char *status_mes[] = {
-	"AVP_OK",
-
-	// INIT AVR_PROGRAMMER
-	"AVP_ERR_INIT_CONF",
-	"AVP_ERR_MISSING_INIT",
-
-	// INIT SESSION
-	"AVP_ERR_NULL_MCU",
-	"AVP_ERR_NULL_PATH",
-	"AVP_ERR_NULL_PROTO",
-	"AVP_ERR_FILE_NOT_CLOSED",
-	"AVP_ERR_WRONG_FILE_FORMAT",
-	"AVP_ERR_SPI_BOUDRATE",
-
-	"AVP_ERR_WRONG_ACTION",
-
-	// SD CARD ERROR
-	"AVP_POINT_SD_CARD_ERR",
-
-	"AVP_FR_DISK_ERR",
-	"AVP_FR_INT_ERR",
-	"AVP_FR_NOT_READY",
-	"AVP_FR_NO_FILE",
-	"AVP_FR_NO_PATH",
-	"AVP_FR_INVALID_NAME",
-	"AVP_FR_DENIED",
-	"AVP_FR_EXIST",
-	"AVP_FR_INVALID_OBJECT",
-	"AVP_FR_WRITE_PROTECTED",
-	"AVP_FR_INVALID_DRIVE",
-	"AVP_FR_NOT_ENABLED",
-	"AVP_FR_NO_FILESYSTEM",
-	"AVP_FR_MKFS_ABORTED",
-	"AVP_FR_TIMEOUT",
-	"AVP_FR_LOCKED",
-	"AVP_FR_NOT_ENOUGH_CORE",
-	"AVP_FR_TOO_MANY_OPEN_FILES",
-	"AVP_FR_INVALID_PARAMETER",
-
-	// PROGRAMMING ERROR
-	"AVP_ERR_ENTER_PMODE",
-	"AVP_ERR_CHECK_SIG"
 };
 
 
@@ -203,8 +162,8 @@ avp_uart_conf *uartConf;
 static const avp_init_t *avr_prog;
 avp_param_t *param;
 
-avp_status sRes;
-char errMessage[64];
+bool AVP_ERROR = 0;
+char errMessage[100];
 
 FIL firmwareFile = {0};
 
@@ -212,12 +171,21 @@ avp_ftype firmwareFtype;
 
 uint8_t f_page_size_b;
 
-
 #define MAX_PAGE_SIZE_BYTES 512
 uint8_t flash_buf[MAX_PAGE_SIZE_BYTES];
 
-avp_status null_actFunc(){
-	return AVP_ERR_WRONG_ACTION;
+
+void fail(const char* fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	vsnprintf(errMessage, sizeof(errMessage), fmt, args);
+	va_end(args);
+
+	AVP_ERROR = 1; // ОЩИБКААААА
+}
+
+void null_actFunc(){
+	fail(AVP_ERR_ACTION);
 }
 
 void AVP_Set_SPI(avp_spi_conf *conf){
@@ -228,12 +196,11 @@ void AVP_Set_UART(avp_uart_conf *conf){
 	uartConf =  conf;
 	curDrv = &uart_driver;
 }
-avp_status spi_check_conf(){
+void spi_check_conf(){
 	if(!spiConf->sck_auto
 	&& !IS_SPI_BAUDRATE_PRESCALER(spiConf->sck_div)){
-		return AVP_ERR_SPI_BOUDRATE;
+		fail(AVP_ERR_SPI_BOUDRATE);
 	}
-	return AVP_OK;
 }
 
 void spi_enable(){
@@ -320,7 +287,7 @@ avp_ftype get_ftype(char *fpath){
 	 }
 }
 
-avp_status AVP_Init(const avp_init_t *avrprog){
+bool AVP_Init(const avp_init_t *avrprog){
 	if(avrprog == NULL
 	|| avrprog->prog_cb == NULL
 	|| avrprog->err_cb == NULL
@@ -330,27 +297,27 @@ avp_status AVP_Init(const avp_init_t *avrprog){
 	|| !IS_GPIO_ALL_INSTANCE(avrprog->CS_Port)){
 
 		DEBUG_PRINTF("AVP INIT: ERR\n");
-		return AVP_ERR_INIT_CONF;
+		return 0;
 	}
 
 	avr_prog = avrprog;
 	spi_disable();
 
 	DEBUG_PRINTF("AVP INIT: OK\n");
-	return AVP_OK;
+	return 1;
 }
 
-avp_status AVP_Execute(avp_action action, avp_param_t *_param){
+void AVP_Execute(avp_action action, avp_param_t *_param){
 	// Готовимся к сессии
-	sRes = Init_Session(action, _param);
-	if(sRes != AVP_OK) {
+	Init_Session(action, _param);
+	if(AVP_ERROR) {
 		return Close_Session();
 		DEBUG_PRINTF("INIT SESSION: ERR");
 	}
 
 	// Инициализируем программирование
-	sRes = curDrv->prog_init();
-	if(sRes == AVP_OK){
+	curDrv->prog_init();
+	if(!AVP_ERROR){
 
 		// Выполняем action
 		switch(action){
@@ -389,54 +356,69 @@ avp_status AVP_Execute(avp_action action, avp_param_t *_param){
 	return Close_Session();
 }
 
-avp_status Close_Session(){
+void Close_Session(){
 	// Ставим NULL на всякий
 	curDrv = NULL;
 	param = NULL;
-
-	if(firmwareFile.fs != NULL){
-		f_close(&firmwareFile);
-	}
-
-	avr_prog->err_cb(sRes, errMessage);
+	f_close(&firmwareFile);
+	
 	memset(errMessage, 0, sizeof(errMessage));
 
+	if(AVP_ERROR){
+		avr_prog->err_cb(errMessage);
+		AVP_ERROR = 0;
+	}
 	DEBUG_PRINTF("\n----------------- SESSION CLOSED ----------------- \n");
 
-	return sRes;
 }
 
-avp_status Init_Session(avp_action action, avp_param_t *_param){
+void Init_Session(avp_action action, avp_param_t *_param){
 
-	if(avr_prog == NULL)        return AVP_ERR_MISSING_INIT;
-	if(_param->mcu==NULL)       return AVP_ERR_NULL_MCU;
-	if(firmwareFile.fs != NULL) return AVP_ERR_FILE_NOT_CLOSED;
-	if(curDrv == NULL) 			return AVP_ERR_NULL_PROTO;
+	if(avr_prog == NULL){
+		fail(AVP_ERR_MISSING_INIT);
+		return;
+	}
+	if(_param->mcu==NULL){
+		fail(AVP_ERR_NULL_MCU);
+		return;
+	}
+	if(firmwareFile.fs != NULL){
+		fail(AVP_ERR_FILE_NOT_CLOSED);
+		return;
+	}
+	if(curDrv == NULL){
+		fail(AVP_ERR_NULL_PROTO);
+		return;
+	}
 
 	// Проверяем файл
 	if(file_supp[action] & AVP_FTYPE_DEF){
 		firmwareFtype = AVP_FTYPE_DEF;
 	}else{
 
-		if(_param->path==NULL || strlen(_param->path)==0) return AVP_ERR_NULL_PATH;
+		if(_param->path==NULL || strlen(_param->path)==0){
+			fail(AVP_ERR_NULL_PATH);
+			return;
+		}
 
 		FRESULT res = f_open(&firmwareFile, _param->path, FA_READ);
 
 		if(res!= FR_OK){
-			return (avp_status)((AVP_POINT_SD_CARD_ERR + 1) + res);
+			fail(AVP_SD_ERRORS[(uint8_t) res]);
+			return;
 		}
 
 		firmwareFtype = get_ftype(_param->path);
 
 		if(!(file_supp[action] & firmwareFtype)){
-			return AVP_ERR_WRONG_FILE_FORMAT;
+			fail(AVP_ERR_FILE_FORMAT);
+			return;
 		}
 	}
 
 	// Проверяем протокол
-
-	avp_status res = curDrv->check_conf();
-	if(res != AVP_OK) return res;
+	curDrv->check_conf();
+	if(AVP_ERROR) return;
 
 	// Устанавливаем параметры
 	param = _param;
@@ -444,10 +426,10 @@ avp_status Init_Session(avp_action action, avp_param_t *_param){
 
 	DEBUG_PRINTF("INIT SESSION: OK\n");
 	DEBUG_PRINTF("\n----------------- SESSION OPEN ----------------- \n\n");
-	return AVP_OK;
+
 }
 
-avp_status enterPMode(){
+void enterPMode(){
 
 	if(spiConf->sck_auto){
 
@@ -468,15 +450,14 @@ avp_status enterPMode(){
 
 	if (response != 0x53)
 	  {
-		strcpy(errMessage, "AVP_ERR_ENTER_PMODE");
-	    return AVP_ERR_ENTER_PMODE;
+		fail(AVP_ERR_ENTER_PMODE);
+	    return;
 	  }
 
 	DEBUG_PRINTF("ENTER_PMODE\n");
-	return AVP_OK;
 }
 
-avp_status checkSignature(){
+void checkSignature(){
 
 	uint8_t sig1 = spi_send_cmd(SIGNATURE_READ, 0x00, 0x00, 0x00);
 	uint8_t sig2 = spi_send_cmd(SIGNATURE_READ, 0x00, 0x01, 0x00);
@@ -485,34 +466,31 @@ avp_status checkSignature(){
 	if (sig1 == param->mcu->sig[0]
 		&& sig2 == param->mcu->sig[1]
 		&& sig3 == param->mcu->sig[2]){
-		DEBUG_PRINTF("CHECK SIGNATURE OK\n");
-	    return AVP_OK;
+		DEBUG_PRINTF("CHECK SIGNATURE OK: ");
+		DEBUG_PRINTF("0x%02X 0x%02X 0x%02X", sig1, sig2, sig3);
+		DEBUG_PRINTF("\n");
+		return;
 	}
 
-	snprintf(errMessage, sizeof(errMessage), "0x%02X 0x%02X 0x%02X", sig1, sig2, sig3);
-
-	return AVP_ERR_CHECK_SIG;
-
+	fail(AVP_ERR_CHECK_SIG, sig1, sig2, sig3);
 }
 
 void chipErase(){
 	spi_send_cmd(CHIP_ERASE, ERASE_PARAM, 0x00, 0x00);
 	HAL_Delay(param->mcu->chip_erase_delay); // Время стирания
-
 }
-avp_status spi_prog_init(){
-	avp_status res;
+void spi_prog_init(){
 
-	res = enterPMode(); // Режим программирования
-	if(res != AVP_OK) return res;
+	enterPMode(); // Режим программирования
+	if(AVP_ERROR) return;
 
-	res = checkSignature(); // Проверяем сигнатуру
-	if(res != AVP_OK) return res;
+	checkSignature(); // Проверяем сигнатуру
+	if(AVP_ERROR) return;
 
 	chipErase(); // Стираем чип
 
 	DEBUG_PRINTF("PROGRAM MODE INIT\n");
-	return AVP_OK;
+
 }
 
 void spi_prog_deinit(){
@@ -522,26 +500,26 @@ void spi_prog_deinit(){
 }
 
 // FLASH
-avp_status spi_fl_Write(){}
-avp_status spi_fl_Read(){}
-avp_status spi_fl_Verify(){}
+void spi_fl_Write(){}
+void spi_fl_Read(){}
+void spi_fl_Verify(){}
 
 // EEPROM
-avp_status spi_ee_Write(){}
-avp_status spi_ee_Read(){}
-avp_status spi_ee_Verify(){}
+void spi_ee_Write(){}
+void spi_ee_Read(){}
+void spi_ee_Verify(){}
 
 // FUSEBIT
-avp_status spi_fb_Write(){}
-avp_status spi_fb_Read(){}
-avp_status spi_fb_Verify(){}
+void spi_fb_Write(){}
+void spi_fb_Read(){}
+void spi_fb_Verify(){}
 
 // LOCKBIT
-avp_status spi_lb_Write(){}
-avp_status spi_lb_Read(){}
-avp_status spi_lb_Verify(){}
+void spi_lb_Write(){}
+void spi_lb_Read(){}
+void spi_lb_Verify(){}
 
 // CONFIG
-avp_status spi_cfg_Write(){}
-avp_status spi_cfg_Read(){}
-avp_status spi_cfg_Verify(){}
+void spi_cfg_Write(){}
+void spi_cfg_Read(){}
+void spi_cfg_Verify(){}

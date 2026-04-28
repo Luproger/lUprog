@@ -81,21 +81,11 @@ static void MX_I2C1_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 void temp_callback(){};
-void temp_err_cb(avp_status err, char* message){
-	DEBUG_PRINTF("SESIION ERROR: ");
-	DEBUG_PRINTF(status_mes[err]);
-	DEBUG_PRINTF("\n");
+void temp_err_cb(char* message){
+  DEBUG_PRINTF("\n ERROR MESSAGE: ");
+  DEBUG_PRINTF(message);
+  DEBUG_PRINTF("\n");
 };
-void SPIBitBang(){
-	uint8_t a[4] = {0xAC, 0x53, 0x00, 0x00};
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
-	HAL_Delay(200);
-
-	HAL_SPI_Transmit(&hspi2, &a, 4, 1);
-
-}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -162,16 +152,15 @@ int main(void)
   /* USER CODE BEGIN 2 */
   FATFS fs;
   FRESULT fres;
-  avp_status res;
 
   DEBUG_INIT(&huart1);
   DEBUG_PRINTF(" \n");
 
   init_btn(&btnStart, BUTTON_GPIO_Port, BUTTON_Pin, true, true);
-  res = AVP_Init(&avrprog);
-  if(res != AVP_OK){
-	DEBUG_PRINTF("AVR Programmer not init!");
-	while(1);
+
+  if(!AVP_Init(&avrprog)){
+    DEBUG_PRINTF("AVR Programmer not init!");
+    while(1);
   }
 
   fres = f_mount(&fs, "", 1);
