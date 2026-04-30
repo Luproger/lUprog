@@ -6,18 +6,24 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../lib/avr_programmer/AVR_Programmer.c \
-../lib/avr_programmer/avr_spi.c \
-../lib/avr_programmer/error_list.c 
+../lib/avr_programmer/avp_internal.c \
+../lib/avr_programmer/error_list.c \
+../lib/avr_programmer/spi_driver.c \
+../lib/avr_programmer/uart_driver.c 
 
 OBJS += \
 ./lib/avr_programmer/AVR_Programmer.o \
-./lib/avr_programmer/avr_spi.o \
-./lib/avr_programmer/error_list.o 
+./lib/avr_programmer/avp_internal.o \
+./lib/avr_programmer/error_list.o \
+./lib/avr_programmer/spi_driver.o \
+./lib/avr_programmer/uart_driver.o 
 
 C_DEPS += \
 ./lib/avr_programmer/AVR_Programmer.d \
-./lib/avr_programmer/avr_spi.d \
-./lib/avr_programmer/error_list.d 
+./lib/avr_programmer/avp_internal.d \
+./lib/avr_programmer/error_list.d \
+./lib/avr_programmer/spi_driver.d \
+./lib/avr_programmer/uart_driver.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

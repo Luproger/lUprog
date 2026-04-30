@@ -1,6 +1,5 @@
-lib/avr_programmer/AVR_Programmer.o: \
- ../lib/avr_programmer/AVR_Programmer.c \
- ../lib/avr_programmer/avp_internal.h \
+lib/avr_programmer/spi_driver.o: ../lib/avr_programmer/spi_driver.c \
+ ../lib/avr_programmer/spi_driver.h ../lib/avr_programmer/avp_internal.h \
  ../lib/avr_programmer/AVR_Programmer.h \
  ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h \
  ../Core/Inc/stm32f1xx_hal_conf.h \
@@ -36,8 +35,9 @@ lib/avr_programmer/AVR_Programmer.o: \
  ../lib/avr_programmer/error_list.h \
  ../Middlewares/Third_Party/FatFs/src/ff.h \
  ../Middlewares/Third_Party/FatFs/src/integer.h ../FATFS/Target/ffconf.h \
- ../Core/Inc/main.h ../Core/Inc/debug.h \
- ../lib/avr_programmer/spi_driver.h ../lib/avr_programmer/uart_driver.h
+ ../Core/Inc/main.h ../Core/Inc/debug.h
+
+../lib/avr_programmer/spi_driver.h:
 
 ../lib/avr_programmer/avp_internal.h:
 
@@ -118,7 +118,3 @@ C:/Users/progr/Desktop/lUprog/lib/mcu/mcu.h:
 ../Core/Inc/main.h:
 
 ../Core/Inc/debug.h:
-
-../lib/avr_programmer/spi_driver.h:
-
-../lib/avr_programmer/uart_driver.h:

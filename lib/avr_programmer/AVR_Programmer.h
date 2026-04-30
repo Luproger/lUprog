@@ -8,15 +8,10 @@
 #ifndef AVR_PROGRAMMER_AVR_PROGRAMMER_H_
 #define AVR_PROGRAMMER_AVR_PROGRAMMER_H_
 
-#include "ff.h"
+#include "stm32f1xx_hal.h"
 #include "mcu.h"
 
-#include "stm32f1xx_hal_spi.h"
-#include "stm32f1xx_hal_gpio.h"
-
-#include "stdbool.h"
-#include <stdio.h>
-#include <string.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 
@@ -51,7 +46,7 @@ typedef enum{
 }avp_action;
 
 typedef void (*exCallback)();
-typedef void (*avrFunc)(void);
+typedef void (*avpFunc)(void);
 typedef void (*errCalback)(char* message);
 
 typedef struct{
@@ -75,48 +70,11 @@ typedef struct{
 typedef struct {
 	char *path;
 	mcu_t *mcu;
-
 } avp_param_t;
 
 bool AVP_Init(const avp_init_t *avrprog);
 void AVP_Set_SPI(avp_spi_conf *conf);
 void AVP_Set_UART(avp_uart_conf *conf);
 void AVP_Execute(avp_action action, avp_param_t *_param);
-
-void Init_Session(avp_action action, avp_param_t *_param);
-void Close_Session();
-
-void null_actFunc();
-
-// INIT
-void spi_check_conf();
-void spi_prog_init();
-void spi_prog_deinit();
-
-// FLASH
-void spi_fl_Write();
-void spi_fl_Read();
-void spi_fl_Verify();
-
-// EEPROM
-void spi_ee_Write();
-void spi_ee_Read();
-void spi_ee_Verify();
-
-// FUSEBIT
-void spi_fb_Write();
-void spi_fb_Read();
-void spi_fb_Verify();
-
-// LOCKBIT
-void spi_lb_Write();
-void spi_lb_Read();
-void spi_lb_Verify();
-
-// CONFIG
-void spi_cfg_Write();
-void spi_cfg_Read();
-void spi_cfg_Verify();
-
 
 #endif /* AVR_PROGRAMMER_AVR_PROGRAMMER_H_ */
