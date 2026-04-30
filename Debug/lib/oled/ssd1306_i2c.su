@@ -1,5 +1,0 @@
-ssd1306_i2c.c:39:6:ssd1306_I2C_WriteMulti	32	static
-ssd1306_i2c.c:54:6:ssd1306_I2C_WriteData	16	static
-ssd1306_i2c.c:65:6:ssd1306_I2C_Write	16	static
-ssd1306_i2c.c:73:9:ssd1306_I2C_Stop	16	static
-ssd1306_i2c.c:89:9:ssd1306_I2C_IsDeviceConnected	24	static

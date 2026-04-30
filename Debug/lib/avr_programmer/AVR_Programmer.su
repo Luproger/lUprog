@@ -1,6 +1,0 @@
-AVR_Programmer.c:65:6:AVP_Init	16	static
-AVR_Programmer.c:85:6:Close_Session	8	static
-AVR_Programmer.c:101:6:Init_Session	24	static
-AVR_Programmer.c:158:6:AVP_Execute	16	static
-AVR_Programmer.c:207:6:AVP_Set_SPI	16	static
-AVR_Programmer.c:211:6:AVP_Set_UART	16	static

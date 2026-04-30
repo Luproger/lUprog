@@ -1,2 +1,0 @@
-encoder.c:9:6:Encoder_Init	16	static
-encoder.c:15:8:Encoder_Get_State	24	static
