@@ -19,18 +19,15 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-
-
-#define ACTION_MAX 16
 #define MAX_PAGE_SIZE_BYTES 512
 
 typedef enum {
-	AVP_FTYPE_BIN = (1 << 0), // 0x01
-	AVP_FTYPE_HEX = (1 << 1), // 0x02
-	AVP_FTYPE_TXT = (1 << 2), // 0x04
-	AVP_FTYPE_CFG = (1 << 3), // 0x08
-	AVP_FTYPE_DEF = (1 << 4), // 0x10
-	AVP_FTYPE_ERR = (1 << 5)
+	AVP_FTYPE_BIN,
+	AVP_FTYPE_HEX,
+	AVP_FTYPE_TXT,
+	AVP_FTYPE_CFG,
+	AVP_FTYPE_DEF,
+	AVP_FTYPE_ERR
 } avp_ftype;
 
 typedef struct {
@@ -68,12 +65,13 @@ typedef struct {
 extern avp_spi_conf *spiConf;
 extern avp_uart_conf *uartConf;
 
-extern const uint8_t file_supp[ACTION_MAX];
+extern avp_action curAction;
 extern const avp_init_t *avr_prog;
 extern avp_param_t *param;
 
 extern bool AVP_ERROR;
-extern char errMessage[100];
+extern char errMessage[64];
+extern const char* errType;
 
 extern FIL firmwareFile;
 extern avp_ftype firmwareFtype;
@@ -81,8 +79,7 @@ extern uint8_t flash_buf[MAX_PAGE_SIZE_BYTES];
 
 extern uint32_t f_page_size_b;
 
-void FAIL(const char* fmt, ...);
+void FAIL(const char* error_type, const char* fmt, ...);
 void null_actFunc();
-avp_ftype get_ftype(char *fpath);
 
 #endif /* AVR_PROGRAMMER_AVP_INTERNAL_H_ */

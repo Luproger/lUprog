@@ -5,42 +5,46 @@
  *      Author: Luproger
  */
 #include "error_list.h"
+    const char* const AVP_ERR_INIT = "INIT ERR: ";
+    const char* const AVP_ERR_SD = "SD ERR: ";
+    const char* const AVP_ERR_PROG = "PROG ERR: ";
+	
     
 	// INIT SESSION
-    const char* const AVP_ERR_MISSING_INIT = "INIT ERR: MISSING_INIT";
-	const char* const AVP_ERR_NULL_MCU = "INIT ERR: NULL_MCU";
-	const char* const AVP_ERR_NULL_PATH = "INIT ERR: NULL_PATH";
-	const char* const AVP_ERR_NULL_PROTO = "INIT ERR: NULL_PROTO";
-	const char* const AVP_ERR_FILE_NOT_CLOSED = "INIT ERR: FILE_NOT_CLOSED";
-	const char* const AVP_ERR_FILE_FORMAT = "INIT ERR: INVALID_FILE_FORMAT";
-	const char* const AVP_ERR_SPI_BOUDRATE = "INIT ERR: INVALID_SPI_BOUDRATE";
-	const char* const AVP_ERR_ACTION = "INIT ERR: INVALID_ACTION";
+    const char* const AVP_ERR_MISSING_INIT = "MISSING_INIT";
+	const char* const AVP_ERR_NULL_MCU = "NULL_MCU";
+	const char* const AVP_ERR_NULL_PATH = "NULL_PATH";
+	const char* const AVP_ERR_NULL_PROTO = "NULL_PROTO";
+	const char* const AVP_ERR_FILE_NOT_CLOSED = "FILE_NOT_CLOSED";
+	const char* const AVP_ERR_SPI_BOUDRATE = "INVALID_SPI_BOUDRATE";
+	const char* const AVP_ERR_ACTION = "INVALID_ACTION";
 
+	const char* const AVP_ERR_INVALID_FTYPE = "INVALID_FTYPE";
     
 	// SD CARD ERROR
     const char* const AVP_SD_ERRORS[] = {
-        "SD ERR: FR_DISK_ERR",
-        "SD ERR: FR_INT_ERR",
-        "SD ERR: FR_NOT_READY",
-        "SD ERR: FR_NO_FILE",
-        "SD ERR: FR_NO_PATH",
-        "SD ERR: FR_INVALID_NAME",
-        "SD ERR: FR_DENIED",
-        "SD ERR: FR_EXIST",
-        "SD ERR: FR_INVALID_OBJECT",
-        "SD ERR: FR_WRITE_PROTECTED",
-        "SD ERR: FR_INVALID_DRIVE",
-        "SD ERR: FR_NOT_ENABLED",
-        "SD ERR: FR_NO_FILESYSTEM",
-        "SD ERR: FR_MKFS_ABORTED",
-        "SD ERR: FR_TIMEOUT",
-        "SD ERR: FR_LOCKED",
-        "SD ERR: FR_NOT_ENOUGH_CORE",
-        "SD ERR: FR_TOO_MANY_OPEN_FILES",
-        "SD ERR: FR_INVALID_PARAMETER"
+        "DISK_ERR",
+        "INT_ERR",
+        "NOT_READY",
+        "NO_FILE",
+        "NO_PATH",
+        "INVALID_NAME",
+        "DENIED",
+        "EXIST",
+        "INVALID_OBJECT",
+        "WRITE_PROTECTED",
+        "INVALID_DRIVE",
+        "NOT_ENABLED",
+        "NO_FILESYSTEM",
+        "MKFS_ABORTED",
+        "TIMEOUT",
+        "LOCKED",
+        "NOT_ENOUGH_CORE",
+        "TOO_MANY_OPEN_FILES",
+        "INVALID_PARAMETER"
     };
 
 
 	// PROGRAMMING ERROR
-	const char* const AVP_ERR_ENTER_PMODE = "PROG ERR: ERR_ENTER_PMODE";
-	const char* const AVP_ERR_CHECK_SIG = "PROG ERR: ERR_CHECK_SIG\nREAD SIG IS: 0x%02X 0x%02X 0x%02X";
+	const char* const AVP_ERR_ENTER_PMODE = "ENTER_PMODE";
+	const char* const AVP_ERR_CHECK_SIG = "CHECK_SIG\nREAD SIG: 0x%02X 0x%02X 0x%02X";

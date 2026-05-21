@@ -1,0 +1,7 @@
+mcu.c:33:6:closeChipList	0	static
+mcu.c:37:9:charToNum	0	static
+mcu.c:56:6:readChip	80	static
+mcu.c:22:6:openChipList	8	static
+mcu.c:78:8:getChip	0	static
+mcu.c:82:6:incChip	0	static
+mcu.c:88:6:decChip	0	static

@@ -1,0 +1,2 @@
+avp_internal.c:26:6:FAIL	12	static
+avp_internal.c:36:6:null_actFunc	0	static

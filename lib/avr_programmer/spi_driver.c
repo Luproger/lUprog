@@ -5,6 +5,7 @@
  *      Author: Luproger
  */
 #include "spi_driver.h"
+#include "sd_driver.h"
 #include "avp_internal.h"
 
 #define PGM_ENABLE_1 0xAC
@@ -14,7 +15,6 @@
 #define ERASE_PARAM 0x80
 #define LOAD_EXT_ADDR 0x4D
 #define WRITE_LOW_BYTE 0x40
-#define WRITE_HIGH_BYTE 0x48
 #define COMMIT_PAGE 0x4C
 #define READ_FLASH 0x20
 #define WRITE_LOCK 0xAC
@@ -71,18 +71,24 @@ void spi_disable(){
 }
 
 uint8_t spi_send_cmd(uint8_t a, uint8_t b, uint8_t c, uint8_t d){
-	uint8_t res;
-	HAL_SPI_Transmit(avr_prog->hspi, &a, 1, 1);
-	HAL_SPI_Transmit(avr_prog->hspi, &b, 1, 1);
-	HAL_SPI_Transmit(avr_prog->hspi, &c, 1, 1);
-	HAL_SPI_TransmitReceive(avr_prog->hspi, &d, &res, 1, 10);
-	return res;
+    uint8_t tx_buf[4] = {a, b, c, d};
+    uint8_t rx_buf[4] = {0};
+
+    HAL_SPI_TransmitReceive(avr_prog->hspi, tx_buf, rx_buf, 4, 100);
+	return rx_buf[3];
 }
 
 uint8_t spi_send_byte(uint8_t byte){
 	uint8_t res;
-	HAL_SPI_TransmitReceive(avr_prog->hspi, &byte, &res, 1, 10);
+	HAL_SPI_TransmitReceive(avr_prog->hspi, &byte, &res, 1, 100);
 	return res;
+}
+
+void flWriteWord(uint8_t hilo, uint32_t word, uint8_t data){
+	spi_send_cmd(WRITE_LOW_BYTE + 8 * hilo, word >> 8, word & 0xFF, data);
+}
+void flPageCommit(uint32_t addr){
+	spi_send_cmd(COMMIT_PAGE, addr >> 8, addr & 0xFF, 0);
 }
 
 void enterPMode(){
@@ -106,7 +112,7 @@ void enterPMode(){
 
 	if (response != 0x53)
 	  {
-		FAIL(AVP_ERR_ENTER_PMODE);
+		FAIL(AVP_ERR_PROG, AVP_ERR_ENTER_PMODE);
 	    return;
 	  }
 
@@ -128,7 +134,7 @@ void checkSignature(){
 		return;
 	}
 
-	FAIL(AVP_ERR_CHECK_SIG, sig1, sig2, sig3);
+	FAIL(AVP_ERR_PROG, AVP_ERR_CHECK_SIG, sig1, sig2, sig3);
 }
 
 void chipErase(){
@@ -140,7 +146,7 @@ void chipErase(){
 void spi_check_conf(){
 	if(!spiConf->sck_auto
 	&& !IS_SPI_BAUDRATE_PRESCALER(spiConf->sck_div)){
-		FAIL(AVP_ERR_SPI_BOUDRATE);
+		FAIL(AVP_ERR_PROG, AVP_ERR_SPI_BOUDRATE);
 	}
 }
 
@@ -165,7 +171,35 @@ void spi_prog_deinit(){
 }
 
 // FLASH
-void spi_fl_Write(){}
+void spi_fl_Write(){
+	uint16_t curPage;
+	uint32_t page_word_addr;
+  	uint16_t word;
+
+	DEBUG_PRINTF("START WRITE FLASH\n");
+	for(curPage = 0; curPage < param->mcu->number_of_flash_pages; curPage++){
+		// Читаем в буфер и проверяем доступность файла
+		if(!SD_transferFunc()) {
+			if(AVP_ERROR) break;
+
+			DEBUG_PRINTF("FILE ENDED\n");
+			break;
+		}
+		page_word_addr = curPage * param->mcu->flash_page_size;
+
+		for(word = 0; word < param->mcu->flash_page_size; word++){
+			flWriteWord(0, word, flash_buf[word * 2]);
+			flWriteWord(1, word, flash_buf[word * 2 + 1]);
+		}
+		flPageCommit(page_word_addr);
+		HAL_Delay(10); // ЭТО ОЧЕНЬ ВАЖНО ПОСЛЕ ЗАПИСИ, ПОДОЖДИ
+
+		// ProgressBar
+		avr_prog->prog_cb(param->mcu->number_of_flash_pages, curPage);
+	}
+	DEBUG_PRINTF("END WRITE FLASH\n");
+	
+}
 void spi_fl_Read(){}
 void spi_fl_Verify(){}
 

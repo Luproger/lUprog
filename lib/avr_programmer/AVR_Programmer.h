@@ -45,13 +45,15 @@ typedef enum{
 	// BOOTLOADER
 }avp_action;
 
-typedef void (*exCallback)();
+typedef void (*exCallback)(uint32_t maxVal, uint32_t curVal);
 typedef void (*avpFunc)(void);
-typedef void (*errCalback)(char* message);
+typedef void (*errCalback)(const char* err_type, char* message);
+typedef void (*onSuccess)(void);
 
 typedef struct{
 	exCallback prog_cb;
 	errCalback err_cb;
+	onSuccess sucs_cb;
 	SPI_HandleTypeDef *hspi;
 	uint16_t CS_Pin;
 	GPIO_TypeDef *CS_Port;

@@ -20,7 +20,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "fatfs.h"
-#include "usb_device.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -80,12 +79,18 @@ static void MX_TIM2_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
-void temp_callback(){};
-void temp_err_cb(char* message){
-  DEBUG_PRINTF("\n ERROR MESSAGE: ");
+void temp_callback(uint32_t maxVal, uint32_t curVal){
+  DEBUG_PRINTF("PROGRESS: %d PAGES\n", curVal);
+}
+void temp_err_cb(const char* err_type, char* message){
+  DEBUG_PRINTF("\n");
+  DEBUG_PRINTF(err_type);
   DEBUG_PRINTF(message);
   DEBUG_PRINTF("\n");
-};
+}
+void temp_sucs_cb(){
+  DEBUG_PRINTF("SUCCESS FINISHED!\n");
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -99,6 +104,7 @@ button_t btnStart;
 static const avp_init_t avrprog = {
 	.prog_cb = &temp_callback,
 	.err_cb = &temp_err_cb,
+  .sucs_cb = &temp_sucs_cb,
 	.hspi = &hspi2,
 	.CS_Pin = AVR_PROG_SPI_SS_Pin,
 	.CS_Port = AVR_PROG_SPI_SS_GPIO_Port
@@ -107,7 +113,7 @@ static const avp_init_t avrprog = {
 avp_param_t param;
 avp_spi_conf spiConf = {
 	.sck_auto = false,
-	.sck_div = SPI_BAUDRATEPRESCALER_256
+	.sck_div = SPI_BAUDRATEPRESCALER_128
 };
 
 /* USER CODE END 0 */
@@ -142,7 +148,6 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI1_Init();
   MX_SPI2_Init();
-  MX_USB_DEVICE_Init();
   MX_DMA_Init();
   MX_USART1_UART_Init();
   MX_TIM2_Init();
@@ -204,7 +209,6 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -225,17 +229,11 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV2;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
-  PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL_DIV1_5;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }

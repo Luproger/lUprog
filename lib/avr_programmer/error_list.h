@@ -8,6 +8,9 @@
 #ifndef AVR_PROGRAMMER_ERROR_LIST_H_
 #define AVR_PROGRAMMER_ERROR_LIST_H_
 
+	extern const char* const AVP_ERR_INIT;
+	extern const char* const AVP_ERR_SD;
+	extern const char* const AVP_ERR_PROG;
 
 	// INIT AVR_PROGRAMMER
 	extern const char* const AVP_ERR_INIT_CONF;
@@ -18,7 +21,7 @@
 	extern const char* const AVP_ERR_NULL_PATH;
 	extern const char* const AVP_ERR_NULL_PROTO;
 	extern const char* const AVP_ERR_FILE_NOT_CLOSED;
-	extern const char* const AVP_ERR_FILE_FORMAT;
+	extern const char* const AVP_ERR_INVALID_FTYPE;
 	extern const char* const AVP_ERR_SPI_BOUDRATE;
 
 	extern const char* const AVP_ERR_ACTION;

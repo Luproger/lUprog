@@ -6,6 +6,7 @@
  */
 
 #include "avp_internal.h"
+#include "sd_driver.h"
 #include "spi_driver.h"
 #include "uart_driver.h"
 
@@ -88,56 +89,64 @@ void Close_Session(){
 	param = NULL;
 	f_close(&firmwareFile);
 	
-	memset(errMessage, 0, sizeof(errMessage));
 
 	if(AVP_ERROR){
-		avr_prog->err_cb(errMessage);
+		avr_prog->err_cb(errType, errMessage);
 		AVP_ERROR = 0;
 	}
+	else{
+		avr_prog->sucs_cb();
+	}
+
 	DEBUG_PRINTF("\n----------------- SESSION CLOSED ----------------- \n");
 
 }
 
-void Init_Session(avp_action action, avp_param_t *_param){
+void Init_Session(avp_param_t *_param){
 
 	if(avr_prog == NULL){
-		FAIL(AVP_ERR_MISSING_INIT);
+		FAIL(AVP_ERR_INIT, AVP_ERR_MISSING_INIT);
 		return;
 	}
 	if(_param->mcu==NULL){
-		FAIL(AVP_ERR_NULL_MCU);
+		FAIL(AVP_ERR_INIT, AVP_ERR_NULL_MCU);
 		return;
 	}
 	if(firmwareFile.fs != NULL){
-		FAIL(AVP_ERR_FILE_NOT_CLOSED);
+		FAIL(AVP_ERR_INIT, AVP_ERR_FILE_NOT_CLOSED);
 		return;
 	}
 	if(curDrv == NULL){
-		FAIL(AVP_ERR_NULL_PROTO);
+		FAIL(AVP_ERR_INIT, AVP_ERR_NULL_PROTO);
 		return;
 	}
 
 	// Проверяем файл
-	if(file_supp[action] & AVP_FTYPE_DEF){
+	if(curAction == ACT_FB_DEFAULT){
 		firmwareFtype = AVP_FTYPE_DEF;
 	}else{
 
 		if(_param->path==NULL || strlen(_param->path)==0){
-			FAIL(AVP_ERR_NULL_PATH);
-			return;
-		}
-
-		FRESULT res = f_open(&firmwareFile, _param->path, FA_READ);
-
-		if(res!= FR_OK){
-			FAIL(AVP_SD_ERRORS[(uint8_t) res]);
+			FAIL(AVP_ERR_INIT, AVP_ERR_NULL_PATH);
 			return;
 		}
 
 		firmwareFtype = get_ftype(_param->path);
 
-		if(!(file_supp[action] & firmwareFtype)){
-			FAIL(AVP_ERR_FILE_FORMAT);
+		if(firmwareFtype == AVP_FTYPE_ERR){
+			FAIL(AVP_ERR_INIT, AVP_ERR_INVALID_FTYPE);
+			return;
+		}
+
+		// Проверяем на поддержку тип файла и устанавливаем функцию трансфер
+		SD_SetFunc(firmwareFtype);
+		if(AVP_ERROR) return;
+
+		// Открываем
+		FRESULT res = f_open(&firmwareFile, _param->path, FA_READ);
+
+		if(res!= FR_OK){
+			FAIL(AVP_ERR_SD, AVP_SD_ERRORS[(uint8_t) res]);
 			return;
 		}
 	}
@@ -149,6 +158,7 @@ void Init_Session(avp_action action, avp_param_t *_param){
 	// Устанавливаем параметры
 	param = _param;
 	f_page_size_b = param->mcu->flash_page_size * 2;
+	memset(errMessage, 0, sizeof(errMessage));
 
 	DEBUG_PRINTF("INIT SESSION: OK\n");
 	DEBUG_PRINTF("\n----------------- SESSION OPEN ----------------- \n\n");
@@ -156,8 +166,9 @@ void Init_Session(avp_action action, avp_param_t *_param){
 }
 
 void AVP_Execute(avp_action action, avp_param_t *_param){
-	// Готовимся к сессии
-	Init_Session(action, _param);
+
+	curAction = action;
+	Init_Session(_param);
 	if(AVP_ERROR) {
 		DEBUG_PRINTF("INIT SESSION: ERR");
 		Close_Session();
@@ -169,7 +180,7 @@ void AVP_Execute(avp_action action, avp_param_t *_param){
 	if(!AVP_ERROR){
 
 		// Выполняем action
-		switch(action){
+		switch(curAction){
 
 		// FALSH
 		case ACT_FL_WRITE:	 curDrv->fl_Write();   break;
