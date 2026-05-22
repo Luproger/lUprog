@@ -34,6 +34,7 @@
 
 	extern const char* const AVP_ERR_ENTER_PMODE;
 	extern const char* const AVP_ERR_CHECK_SIG;
+	extern const char* const AVP_ERR_VERIFY;
 
 
 #endif /* AVR_PROGRAMMER_ERROR_LIST_H_ */

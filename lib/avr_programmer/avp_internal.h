@@ -67,7 +67,7 @@ extern avp_uart_conf *uartConf;
 
 extern avp_action curAction;
 extern const avp_init_t *avr_prog;
-extern avp_param_t *param;
+extern  avp_param_t *avp_curParam;
 
 extern bool AVP_ERROR;
 extern char errMessage[64];

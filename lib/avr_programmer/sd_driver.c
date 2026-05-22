@@ -16,7 +16,7 @@ sd_func_t SD_transferFunc;
 bool SD_GetFlBin(){
 	res = f_read(&firmwareFile, flash_buf, f_page_size_b, &br); // TODO
 	if(res != FR_OK) {
-		FAIL(AVP_ERR_SD, AVP_SD_ERRORS[res]);
+		FAIL(AVP_ERR_SD, AVP_SD_ERRORS[res - 1]);
 		return 0;
 	}
 

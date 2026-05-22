@@ -91,6 +91,11 @@ void flPageCommit(uint32_t addr){
 	spi_send_cmd(COMMIT_PAGE, addr >> 8, addr & 0xFF, 0);
 }
 
+uint8_t flReadByte(uint8_t hilo, uint32_t word)
+{
+  return spi_send_cmd(READ_FLASH + hilo * 8, word >> 8, word & 0xFF, 0);
+}
+
 void enterPMode(){
 
 	if(spiConf->sck_auto){
@@ -125,9 +130,9 @@ void checkSignature(){
 	uint8_t sig2 = spi_send_cmd(SIGNATURE_READ, 0x00, 0x01, 0x00);
 	uint8_t sig3 = spi_send_cmd(SIGNATURE_READ, 0x00, 0x02, 0x00);
 
-	if (sig1 == param->mcu->sig[0]
-		&& sig2 == param->mcu->sig[1]
-		&& sig3 == param->mcu->sig[2]){
+	if (sig1 == avp_curParam->mcu->sig[0]
+		&& sig2 == avp_curParam->mcu->sig[1]
+		&& sig3 == avp_curParam->mcu->sig[2]){
 		DEBUG_PRINTF("CHECK SIGNATURE OK: ");
 		DEBUG_PRINTF("0x%02X 0x%02X 0x%02X", sig1, sig2, sig3);
 		DEBUG_PRINTF("\n");
@@ -139,7 +144,7 @@ void checkSignature(){
 
 void chipErase(){
 	spi_send_cmd(CHIP_ERASE, ERASE_PARAM, 0x00, 0x00);
-	HAL_Delay(param->mcu->chip_erase_delay); // Время стирания
+	HAL_Delay(avp_curParam->mcu->chip_erase_delay); // Время стирания
 }
 
 // INIT
@@ -158,8 +163,6 @@ void spi_prog_init(){
 	checkSignature(); // Проверяем сигнатуру
 	if(AVP_ERROR) return;
 
-	chipErase(); // Стираем чип
-
 	DEBUG_PRINTF("PROGRAM MODE INIT\n");
 
 }
@@ -176,8 +179,11 @@ void spi_fl_Write(){
 	uint32_t page_word_addr;
   	uint16_t word;
 
+	DEBUG_PRINTF("CHIP ERASE\n");
+	chipErase(); // Стираем чип
+
 	DEBUG_PRINTF("START WRITE FLASH\n");
-	for(curPage = 0; curPage < param->mcu->number_of_flash_pages; curPage++){
+	for(curPage = 0; curPage < avp_curParam->mcu->number_of_flash_pages; curPage++){
 		// Читаем в буфер и проверяем доступность файла
 		if(!SD_transferFunc()) {
 			if(AVP_ERROR) break;
@@ -185,9 +191,9 @@ void spi_fl_Write(){
 			DEBUG_PRINTF("FILE ENDED\n");
 			break;
 		}
-		page_word_addr = curPage * param->mcu->flash_page_size;
+		page_word_addr = curPage * avp_curParam->mcu->flash_page_size;
 
-		for(word = 0; word < param->mcu->flash_page_size; word++){
+		for(word = 0; word < avp_curParam->mcu->flash_page_size; word++){
 			flWriteWord(0, word, flash_buf[word * 2]);
 			flWriteWord(1, word, flash_buf[word * 2 + 1]);
 		}
@@ -195,13 +201,52 @@ void spi_fl_Write(){
 		HAL_Delay(10); // ЭТО ОЧЕНЬ ВАЖНО ПОСЛЕ ЗАПИСИ, ПОДОЖДИ
 
 		// ProgressBar
-		avr_prog->prog_cb(param->mcu->number_of_flash_pages, curPage);
+		avr_prog->prog_cb(avp_curParam->mcu->number_of_flash_pages, curPage);
 	}
 	DEBUG_PRINTF("END WRITE FLASH\n");
 	
 }
-void spi_fl_Read(){}
-void spi_fl_Verify(){}
+void spi_fl_Read(){
+}
+void spi_fl_Verify(){
+	uint32_t word_addr = 0;
+	uint16_t page_word = 0;
+
+	uint8_t verify_buf[4];
+
+	DEBUG_PRINTF("START VERIFY FLASH\n");
+	
+	while(word_addr < avp_curParam->mcu->flash_page_size * avp_curParam->mcu->number_of_flash_pages){
+		// Читаем в буфер и проверяем доступность файла
+		if(!SD_transferFunc()) {
+			if(AVP_ERROR) return;
+
+			FAIL(AVP_ERR_PROG, AVP_ERR_VERIFY, word_addr * 2, 0xFF, flReadByte(0, word_addr));
+			DEBUG_PRINTF("FILE ENDED BEFORE FLASH!\n");
+			return;
+		}
+		for(page_word = 0; page_word < avp_curParam->mcu->flash_page_size; word_addr++, page_word++){
+			verify_buf[0] = flash_buf[page_word *2];		// low orig
+			verify_buf[1] = flash_buf[page_word *2 + 1];	// high orig
+
+			verify_buf[2] = flReadByte(0, word_addr);		// low read
+			verify_buf[3] = flReadByte(1, word_addr);		// high read
+
+			if(verify_buf[0] != verify_buf[2]){
+				FAIL(AVP_ERR_PROG, AVP_ERR_VERIFY, word_addr * 2, verify_buf[0], verify_buf[2]);
+				return;
+			}
+			if(verify_buf[1] != verify_buf[3]){
+				FAIL(AVP_ERR_PROG, AVP_ERR_VERIFY, word_addr * 2 + 1, verify_buf[1], verify_buf[3]);
+				return;
+			}
+		// ProgressBar
+		//avr_prog->prog_cb(avp_curParam->mcu->number_of_flash_pages, curPage);
+		}
+
+	}
+	DEBUG_PRINTF("END VERIFY FLASH\n");
+}
 
 // EEPROM
 void spi_ee_Write(){}

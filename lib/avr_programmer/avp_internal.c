@@ -11,7 +11,7 @@ avp_uart_conf *uartConf;
 
 avp_action curAction;
 const avp_init_t *avr_prog;
-avp_param_t *param;
+avp_param_t *avp_curParam;
 
 bool AVP_ERROR = 0;
 char errMessage[64];

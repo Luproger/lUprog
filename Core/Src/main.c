@@ -104,7 +104,7 @@ button_t btnStart;
 static const avp_init_t avrprog = {
 	.prog_cb = &temp_callback,
 	.err_cb = &temp_err_cb,
-  .sucs_cb = &temp_sucs_cb,
+	.sucs_cb = &temp_sucs_cb,
 	.hspi = &hspi2,
 	.CS_Pin = AVR_PROG_SPI_SS_Pin,
 	.CS_Port = AVR_PROG_SPI_SS_GPIO_Port
@@ -174,17 +174,16 @@ int main(void)
 	 while(1);
   }
   DEBUG_PRINTF("SD Card mounted\n");
-  param.path = "BL_1.BIN";
+  param.path = "LCD_EXAMPLE.BIN";
 
   openChipList();
   param.mcu = getChip();
 
 
   AVP_Set_SPI(&spiConf);
+  AVP_Execute(ACT_FL_WRITE, &param); // Пишем
 
-//  DEBUG_PRINTF("START EXECUTE");
-  AVP_Execute(ACT_FL_WRITE, &param);
-
+  AVP_Execute(ACT_FL_VERIFY, &param); // Верификация
 
   /* USER CODE END 2 */
 

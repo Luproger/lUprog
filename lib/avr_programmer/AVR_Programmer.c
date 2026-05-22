@@ -84,9 +84,7 @@ bool AVP_Init(const avp_init_t *avrprog){
 }
 
 void Close_Session(){
-	// Ставим NULL на всякий
-	curDrv = NULL;
-	param = NULL;
+	// Закрыть пасть либералу!
 	f_close(&firmwareFile);
 	
 
@@ -146,7 +144,7 @@ void Init_Session(avp_param_t *_param){
 		FRESULT res = f_open(&firmwareFile, _param->path, FA_READ);
 
 		if(res!= FR_OK){
-			FAIL(AVP_ERR_SD, AVP_SD_ERRORS[(uint8_t) res]);
+			FAIL(AVP_ERR_SD, AVP_SD_ERRORS[res - 1]);
 			return;
 		}
 	}
@@ -156,8 +154,8 @@ void Init_Session(avp_param_t *_param){
 	if(AVP_ERROR) return;
 
 	// Устанавливаем параметры
-	param = _param;
-	f_page_size_b = param->mcu->flash_page_size * 2;
+	avp_curParam = _param;
+	f_page_size_b = avp_curParam->mcu->flash_page_size * 2;
 	memset(errMessage, 0, sizeof(errMessage));
 
 	DEBUG_PRINTF("INIT SESSION: OK\n");
