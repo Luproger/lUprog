@@ -185,6 +185,9 @@ int main(void)
 
   AVP_Execute(ACT_FL_VERIFY, &param); // Верификация
 
+  param.path = "READ.BIN";
+  AVP_Execute(ACT_FL_READ, &param); // Читение
+
   /* USER CODE END 2 */
 
   /* Infinite loop */

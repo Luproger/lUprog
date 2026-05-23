@@ -201,7 +201,7 @@ void spi_fl_Write(){
 		HAL_Delay(10); // ЭТО ОЧЕНЬ ВАЖНО ПОСЛЕ ЗАПИСИ, ПОДОЖДИ
 
 		// ProgressBar
-		avr_prog->prog_cb(avp_curParam->mcu->number_of_flash_pages, curPage);
+		avr_prog->prog_cb(avp_curParam->mcu->number_of_flash_pages - 1, curPage);
 	}
 	DEBUG_PRINTF("END WRITE FLASH\n");
 	
@@ -214,13 +214,13 @@ void spi_fl_Read(){
 		for(uint16_t byte_index = 0; byte_index < f_page_size_b; byte_index+=2, word_addr++){
 			flash_buf[byte_index] = flReadByte(0, word_addr);		// low 
 			flash_buf[byte_index + 1] = flReadByte(1, word_addr);	// high 
-
-			// ProgressBar
-			//avr_prog->prog_cb(avp_curParam->mcu->number_of_flash_pages, curPage);
 		}
 
 		// Пишем буфер в файл
 		if(!SD_transferFunc()) return;
+
+		// ProgressBar
+		avr_prog->prog_cb(avp_curParam->mcu->number_of_flash_pages - 1, curPage);
 	}
 
 	DEBUG_PRINTF("END READ FLASH\n");
@@ -233,7 +233,7 @@ void spi_fl_Verify(){
 
 	DEBUG_PRINTF("START VERIFY FLASH\n");
 	
-	while(word_addr < avp_curParam->mcu->flash_page_size * avp_curParam->mcu->number_of_flash_pages){
+	for(uint16_t curPage = 0; curPage < avp_curParam->mcu->number_of_flash_pages; curPage++){
 		// Читаем в буфер и проверяем доступность файла
 		if(!SD_transferFunc()) {
 			if(AVP_ERROR) return;
@@ -242,7 +242,8 @@ void spi_fl_Verify(){
 			DEBUG_PRINTF("FILE ENDED BEFORE FLASH!\n");
 			return;
 		}
-		for(byte_index = 0; byte_index < f_page_size_b; word_addr++, byte_index+=2){
+
+		for(uint16_t byte_index = 0; byte_index < f_page_size_b; byte_index+=2, word_addr++){
 			verify_buf[0] = flash_buf[byte_index];		// low orig
 			verify_buf[1] = flash_buf[byte_index + 1];	// high orig
 
@@ -257,10 +258,10 @@ void spi_fl_Verify(){
 				FAIL(AVP_ERR_PROG, AVP_ERR_VERIFY, word_addr * 2 + 1, verify_buf[1], verify_buf[3]);
 				return;
 			}
-		// ProgressBar
-		//avr_prog->prog_cb(avp_curParam->mcu->number_of_flash_pages, curPage);
 		}
-
+		
+		// ProgressBar
+		avr_prog->prog_cb(avp_curParam->mcu->number_of_flash_pages - 1, curPage);
 	}
 	DEBUG_PRINTF("END VERIFY FLASH\n");
 }
