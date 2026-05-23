@@ -26,11 +26,12 @@
 #include "mcu.h"
 #include "AVR_Programmer.h"
 
-//#include "fsm.h"
-
 #include "ssd1306.h"
+#include "ssd1306_fonts.h"
 #include "ssd1306_tests.h"
+
 #include <stdbool.h>
+#include <string.h>
 
 #include "encBtn.h"
 
@@ -79,6 +80,7 @@ static void MX_TIM2_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
+
 void temp_callback(uint32_t maxVal, uint32_t curVal){
   DEBUG_PRINTF("PROGRESS: %d PAGES\n", curVal);
 }
@@ -99,7 +101,8 @@ void temp_sucs_cb(){
 FATFS fileSystem;
 FIL firmware;
 
-button_t btnStart;
+button_t btnOK;
+encoder_t encoder;
 
 static const avp_init_t avrprog = {
 	.prog_cb = &temp_callback,
@@ -115,6 +118,223 @@ avp_spi_conf spiConf = {
 	.sck_auto = false,
 	.sck_div = SPI_BAUDRATEPRESCALER_128
 };
+avp_action avpAction;
+
+typedef enum{
+	MAIN_SCREEN,
+	SET_MCU,
+	SET_ACTION,
+	SET_FILE,
+	ACTION
+}menu_t;
+
+menu_t menuState = MAIN_SCREEN;
+bool firstInState = 1;
+
+char* const FILE_LIST[] = {
+  "BL_1.BIN",
+  "EMPTY.BIN",
+  "LCD_EXAMPLE.BIN",
+  "READ.BIN"
+};
+
+#define FILE_LIST_NUM (sizeof(FILE_LIST) / sizeof(FILE_LIST[0]))
+
+void changeMenu(menu_t state){
+	DEBUG_PRINTF("CHANGE MENU STATE: %d -> %d\n", (uint8_t)menuState, (uint8_t)state);
+	menuState = state;
+	firstInState = 1;
+}
+
+void menuTick(){
+	static char mcuName[16];
+	static bool updateScreen;
+	static uint8_t cursor;
+	static uint8_t topIndx;
+
+	switch(menuState){
+	case MAIN_SCREEN:
+		if(firstInState){
+			firstInState = 0;
+			ssd1306_Fill(Black);
+			ssd1306_SetCursor(30, 10);
+			ssd1306_WriteString("lUprog", Font_11x18, White);
+			ssd1306_FillRectangle(10, 35, 117, 60, White);
+			ssd1306_SetCursor(35, 39);
+			ssd1306_WriteString("START", Font_11x18, Black);
+			ssd1306_UpdateScreen();
+		}
+		if(btnIsClick(&btnOK)) changeMenu(SET_MCU);
+		break;
+
+	case SET_MCU:
+		if(firstInState){
+			firstInState = 0;
+			openChipList();
+			updateScreen = 1;
+
+			ssd1306_Fill(Black);
+			ssd1306_FillRectangle(10, 0, 117, 10, White);
+			ssd1306_SetCursor(35, 2);
+			ssd1306_WriteString("SELECT MCU", Font_6x8, Black);
+
+		}
+		if(updateScreen){
+			updateScreen = 0;
+			param.mcu = getChip();
+			memcpy(mcuName, param.mcu->chip_name, sizeof(param.mcu->chip_name));
+			mcuName[15] = 0;
+
+			ssd1306_FillRectangle(0, 25, 127, 43, Black);
+			ssd1306_SetCursor(10, 25);
+			ssd1306_WriteString(">", Font_11x18, White);
+			ssd1306_SetCursor(25, 30);
+			ssd1306_WriteString(mcuName, Font_6x8, White);
+			ssd1306_UpdateScreen();
+		}
+		if(btnIsClick(&btnOK)){
+			closeChipList();
+			changeMenu(SET_ACTION);
+			DEBUG_PRINTF("SET MCU: ");
+			DEBUG_PRINTF(mcuName);
+			DEBUG_PRINTF("\n");
+		}
+		if(encIsCW(&encoder)) {
+			incChip();
+			updateScreen = 1;
+		}
+		if(encIsCCW(&encoder)) {
+			decChip();
+			updateScreen = 1;
+		}
+
+		break;
+
+	case SET_ACTION:
+		if(firstInState){
+			firstInState = 0;
+      updateScreen = 1;
+			cursor = 0;
+
+			ssd1306_Fill(Black);
+			ssd1306_FillRectangle(10, 0, 117, 10, White);
+			ssd1306_SetCursor(35, 2);
+			ssd1306_WriteString("SET ACTION", Font_6x8, Black);
+			ssd1306_SetCursor(18, 18);
+			ssd1306_WriteString("READ", Font_6x8, White);
+			ssd1306_SetCursor(18, 30);
+			ssd1306_WriteString("WRITE", Font_6x8, White);
+			ssd1306_SetCursor(18, 42);
+			ssd1306_WriteString("VERIFY", Font_6x8, White);
+			ssd1306_UpdateScreen();
+		}
+
+    if(updateScreen){
+      updateScreen = 0;
+      ssd1306_FillRectangle(0, 12, 16, 127, Black);
+
+      switch(cursor){
+        case 0:
+          ssd1306_SetCursor(10, 18);
+          avpAction = ACT_FL_READ;
+          break;
+        case 1:
+          ssd1306_SetCursor(10, 30);
+          avpAction = ACT_FL_WRITE;
+          break;
+
+        case 2:
+          ssd1306_SetCursor(10, 42);
+          avpAction = ACT_FL_VERIFY;
+          break;
+      }
+      ssd1306_WriteString(">", Font_6x8, White);
+      ssd1306_UpdateScreen();
+    }
+
+    if(btnIsClick(&btnOK)){
+		changeMenu(SET_FILE);
+		DEBUG_PRINTF("SET_ACTION: %d\n", (uint8_t) avpAction);
+	}
+
+    if(encIsCW(&encoder) && cursor < 2){
+      cursor++;
+      updateScreen = 1;
+    }
+    if(encIsCCW(&encoder) && cursor > 0){
+      cursor--;
+      updateScreen = 1;
+    }
+
+		break;
+
+	case SET_FILE:
+
+		if(firstInState){
+			firstInState = 0;
+			updateScreen = 1;
+			topIndx = 0;
+			cursor = 0;
+
+			ssd1306_Fill(Black);
+			ssd1306_FillRectangle(3, 0, 117, 10, White);
+			ssd1306_SetCursor(40, 2);
+			ssd1306_WriteString("SET FILE", Font_6x8, Black);
+			ssd1306_UpdateScreen();
+		}
+		if(updateScreen){
+		  updateScreen = 0;
+		  ssd1306_FillRectangle(0, 12, 127, 63, Black);
+
+		  for(uint8_t i = 0; i < 3; i++){
+			  int fileIdx = topIndx + i;
+			  if(fileIdx < FILE_LIST_NUM){
+                  ssd1306_SetCursor(18, 18 + (i * 12));
+                  ssd1306_WriteString(FILE_LIST[fileIdx], Font_6x8, White);
+                  if(i == (cursor - topIndx)){
+                	  ssd1306_SetCursor(10, 18 + (i * 12));
+                	  ssd1306_WriteString(">", Font_6x8, White);
+                  }
+			  }
+		  }
+		  ssd1306_UpdateScreen();
+		}
+	    if(btnIsClick(&btnOK)){
+	    	param.path = FILE_LIST[cursor];
+	    	DEBUG_PRINTF("SET FILE: ");
+	    	DEBUG_PRINTF(FILE_LIST[cursor]);
+	    	DEBUG_PRINTF("\n");
+			changeMenu(ACTION);
+		}
+
+	    if(encIsCW(&encoder) && cursor < FILE_LIST_NUM - 1){
+	      cursor++;
+	      updateScreen = 1;
+	      if(cursor - topIndx >= 3) topIndx++;
+	    }
+	    if(encIsCCW(&encoder) && cursor > 0){
+	      cursor--;
+	      updateScreen = 1;
+	      if(cursor < topIndx) topIndx--;
+	    }
+		break;
+
+	case ACTION:
+		ssd1306_Fill(Black);
+		ssd1306_SetCursor(40, 23);
+		ssd1306_WriteString("GO!!!", Font_11x18, White);
+		ssd1306_UpdateScreen();
+		HAL_Delay(500);
+
+		ssd1306_Fill(Black);
+		ssd1306_UpdateScreen();
+
+		AVP_Execute(avpAction, &param);
+		changeMenu(MAIN_SCREEN);
+
+		break;
+	}
+}
 
 /* USER CODE END 0 */
 
@@ -161,7 +381,14 @@ int main(void)
   DEBUG_INIT(&huart1);
   DEBUG_PRINTF(" \n");
 
-  init_btn(&btnStart, BUTTON_GPIO_Port, BUTTON_Pin, true, true);
+  init_btn(&btnOK,BTN_OK_GPIO_Port, BTN_OK_Pin, true, 1);
+  init_enc(&encoder, &htim3);
+
+  ssd1306_Init();
+  ssd1306_SetContrast(255);
+  ssd1306_Fill(Black);
+  ssd1306_UpdateScreen();
+
 
   if(!AVP_Init(&avrprog)){
     DEBUG_PRINTF("AVR Programmer not init!");
@@ -171,31 +398,32 @@ int main(void)
   fres = f_mount(&fs, "", 1);
   if(fres != FR_OK){
 	 DEBUG_PRINTF("SD Card mount error!");
+  ssd1306_SetCursor(0, 26);
+  ssd1306_WriteString("SD_MOUNT_ER", Font_11x18, White);
+  ssd1306_UpdateScreen();
+
 	 while(1);
   }
   DEBUG_PRINTF("SD Card mounted\n");
-  param.path = "LCD_EXAMPLE.BIN";
-
-  openChipList();
-  param.mcu = getChip();
-
 
   AVP_Set_SPI(&spiConf);
-  AVP_Execute(ACT_FL_WRITE, &param); // Пишем
 
-  AVP_Execute(ACT_FL_VERIFY, &param); // Верификация
 
-  param.path = "READ.BIN";
-  AVP_Execute(ACT_FL_READ, &param); // Читение
+//  AVP_Execute(ACT_FL_WRITE, &param); // Пишем
+//
+//  AVP_Execute(ACT_FL_VERIFY, &param); // Верификация
+//
+//  param.path = "READ.BIN";
+//  AVP_Execute(ACT_FL_READ, &param); // Читение
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-		btnTick(&btnStart);
-
-
+		btnTick(&btnOK);
+		encTick(&encoder);
+		menuTick();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -517,12 +745,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(SD_CS_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : BUTTON_Pin */
-  GPIO_InitStruct.Pin = BUTTON_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(BUTTON_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : AVR_PROG_SPI_SS_Pin */
   GPIO_InitStruct.Pin = AVR_PROG_SPI_SS_Pin;

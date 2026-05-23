@@ -37,7 +37,6 @@
 "./lib/avr_programmer/spi_driver.o"
 "./lib/avr_programmer/uart_driver.o"
 "./lib/encoder/encBtn.o"
-"./lib/fsm/fsm.o"
 "./lib/mcu/mcu.o"
 "./lib/menu/TreeMenu.o"
 "./lib/oled/ssd1306.o"

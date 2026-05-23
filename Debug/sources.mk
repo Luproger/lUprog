@@ -30,7 +30,6 @@ Middlewares/Third_Party/FatFs/src \
 Middlewares/Third_Party/FatFs/src/option \
 lib/avr_programmer \
 lib/encoder \
-lib/fsm \
 lib/mcu \
 lib/menu \
 lib/oled \

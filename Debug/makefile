@@ -12,7 +12,6 @@ RM := rm -rf
 -include lib/oled/subdir.mk
 -include lib/menu/subdir.mk
 -include lib/mcu/subdir.mk
--include lib/fsm/subdir.mk
 -include lib/encoder/subdir.mk
 -include lib/avr_programmer/subdir.mk
 -include Middlewares/Third_Party/FatFs/src/option/subdir.mk

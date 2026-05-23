@@ -36,6 +36,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  C:/Users/progr/Desktop/lUprog/lib/avr_programmer/AVR_Programmer.h \
  C:/Users/progr/Desktop/lUprog/lib/oled/ssd1306.h \
  C:/Users/progr/Desktop/lUprog/lib/oled/ssd1306_conf.h \
+ C:/Users/progr/Desktop/lUprog/lib/oled/ssd1306_fonts.h \
+ C:/Users/progr/Desktop/lUprog/lib/oled/ssd1306.h \
  C:/Users/progr/Desktop/lUprog/lib/oled/ssd1306_tests.h \
  C:/Users/progr/Desktop/lUprog/lib/encoder/encBtn.h
 
@@ -120,6 +122,10 @@ C:/Users/progr/Desktop/lUprog/lib/avr_programmer/AVR_Programmer.h:
 C:/Users/progr/Desktop/lUprog/lib/oled/ssd1306.h:
 
 C:/Users/progr/Desktop/lUprog/lib/oled/ssd1306_conf.h:
+
+C:/Users/progr/Desktop/lUprog/lib/oled/ssd1306_fonts.h:
+
+C:/Users/progr/Desktop/lUprog/lib/oled/ssd1306.h:
 
 C:/Users/progr/Desktop/lUprog/lib/oled/ssd1306_tests.h:
 

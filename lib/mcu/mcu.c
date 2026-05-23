@@ -31,6 +31,7 @@ void openChipList(){
 	readChip();
 }
 void closeChipList(){
+	DEBUG_PRINTF("Close file mcu list! \n");
 	f_close(&chipFile);
 }
 
@@ -86,7 +87,7 @@ void incChip(){
 	}
 }
 void decChip(){
-	if(chip_index >= 0){
+	if(chip_index > 0){
 		chip_index--;
 		readChip();
 	}
