@@ -141,7 +141,7 @@ void Init_Session(avp_param_t *_param){
 		if(AVP_ERROR) return;
 
 		// Открываем
-		FRESULT res = f_open(&firmwareFile, _param->path, FA_READ);
+		FRESULT res = f_open(&firmwareFile, _param->path, SD_fileMode);
 
 		if(res!= FR_OK){
 			FAIL(AVP_ERR_SD, AVP_SD_ERRORS[res - 1]);

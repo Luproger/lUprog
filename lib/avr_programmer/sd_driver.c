@@ -10,11 +10,11 @@
 FRESULT res;
 UINT br;
 sd_func_t SD_transferFunc;
-
+uint8_t SD_fileMode;
 
 // GET
 bool SD_GetFlBin(){
-	res = f_read(&firmwareFile, flash_buf, f_page_size_b, &br); // TODO
+	res = f_read(&firmwareFile, flash_buf, f_page_size_b, &br);
 	if(res != FR_OK) {
 		FAIL(AVP_ERR_SD, AVP_SD_ERRORS[res - 1]);
 		return 0;
@@ -45,7 +45,19 @@ bool SD_GetCfg(){}
 
 
 // SET
-bool SD_SetFlBin(){}
+bool SD_SetFlBin(){
+	res = f_write(&firmwareFile, flash_buf, f_page_size_b, &br);
+	if(res != FR_OK){
+		FAIL(AVP_ERR_SD, AVP_SD_ERRORS[res - 1]);
+		return 0;
+	}
+	if(br != f_page_size_b){
+		FAIL(AVP_ERR_SD, AVP_ERR_SD_PARTIAL_WRITE);
+		return 0;
+	}
+	return 1;
+
+}
 bool SD_SetFlHex(){}
 
 bool SD_SetEeBin(){}
@@ -53,7 +65,6 @@ bool SD_SetEeHex(){}
 
 bool SD_SetFbTxt(){}
 bool SD_SetFbBin(){}
-bool SD_SetFbDef(){}
 
 bool SD_SetLbTxt(){}
 bool SD_SetLbBin(){}
@@ -91,11 +102,13 @@ void SD_SetFunc(avp_ftype ftype){
 	 // FLASH
 	 case ACT_FL_WRITE:
 	 case ACT_FL_VERIFY:
+		SD_fileMode = FA_READ;
 	 	if(ftype == AVP_FTYPE_BIN) SD_transferFunc = SD_GetFlBin;
 	 	else if(ftype == AVP_FTYPE_HEX) SD_transferFunc = SD_GetFlHex;
 	 	break;
 
 	 case ACT_FL_READ:
+		SD_fileMode = FA_WRITE | FA_CREATE_ALWAYS;
 	 	if(ftype == AVP_FTYPE_BIN) SD_transferFunc = SD_SetFlBin;
 	 	else if(ftype == AVP_FTYPE_HEX) SD_transferFunc = SD_SetFlHex;
 	 	break;
@@ -103,11 +116,13 @@ void SD_SetFunc(avp_ftype ftype){
 	 // EEPROM
 	 case ACT_EE_WRITE:
 	 case ACT_EE_VERIFY:
+		SD_fileMode = FA_READ;
 	 	if(ftype == AVP_FTYPE_BIN) SD_transferFunc = SD_GetEeBin;
 	 	else if(ftype == AVP_FTYPE_HEX) SD_transferFunc = SD_GetEeHex;
 	 	break;
 
 	 case ACT_EE_READ:
+		SD_fileMode = FA_WRITE | FA_CREATE_ALWAYS;
 	 	if(ftype == AVP_FTYPE_BIN) SD_transferFunc = SD_SetEeBin;
 	 	else if(ftype == AVP_FTYPE_HEX) SD_transferFunc = SD_SetEeHex;
 	 	break;
@@ -115,15 +130,13 @@ void SD_SetFunc(avp_ftype ftype){
 	 // FUSEBIT
 	 case ACT_FB_WRITE:
 	 case ACT_FB_VERIFY:
+		SD_fileMode = FA_READ;
 	 	if(ftype == AVP_FTYPE_BIN) SD_transferFunc = SD_GetFbBin;
 	 	else if(ftype == AVP_FTYPE_TXT) SD_transferFunc = SD_GetFbTxt;
 	 	break;
 
-	 case ACT_FB_DEFAULT:
-	 	if(ftype == AVP_FTYPE_DEF) SD_transferFunc = SD_GetFbDef;
-	 	break;
-
 	 case ACT_FB_READ:
+		SD_fileMode = FA_WRITE | FA_CREATE_ALWAYS;
 	 	if(ftype == AVP_FTYPE_BIN) SD_transferFunc = SD_SetFbBin;
 	 	else if(ftype == AVP_FTYPE_TXT) SD_transferFunc = SD_SetFbTxt;
 	 	break;
@@ -131,11 +144,13 @@ void SD_SetFunc(avp_ftype ftype){
 	 // LOCKBIT
 	 case ACT_LB_WRITE:
 	 case ACT_LB_VERIFY:
+		SD_fileMode = FA_READ;
 	 	if(ftype == AVP_FTYPE_BIN) SD_transferFunc = SD_GetLbBin;
 	 	else if(ftype == AVP_FTYPE_TXT) SD_transferFunc = SD_GetLbTxt;
 	 	break;
 
 	 case ACT_LB_READ:
+	 	SD_fileMode = FA_WRITE | FA_CREATE_ALWAYS;
 	 	if(ftype == AVP_FTYPE_BIN) SD_transferFunc = SD_SetLbBin;
 	 	else if(ftype == AVP_FTYPE_TXT) SD_transferFunc = SD_SetLbTxt;
 	 	break;
@@ -143,10 +158,12 @@ void SD_SetFunc(avp_ftype ftype){
 	 // CONGIG
 	 case ACT_CFG_WRITE:
 	 case ACT_CFG_VERIFY:
+		SD_fileMode = FA_READ;
 	 	if(ftype == AVP_FTYPE_CFG) SD_transferFunc = SD_GetCfg;
 	 	break;
 
 	 case ACT_CFG_READ:
+		SD_fileMode = FA_WRITE | FA_CREATE_ALWAYS;
 	 	if(ftype == AVP_FTYPE_CFG) SD_transferFunc = SD_SetCfg;
 	 	break;
 	 }

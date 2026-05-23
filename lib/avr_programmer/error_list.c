@@ -43,6 +43,7 @@
         "TOO_MANY_OPEN_FILES",
         "INVALID_PARAMETER"
     };
+    const char* const AVP_ERR_SD_PARTIAL_WRITE = "PARTIAL_WRITE";
 
 
 	// PROGRAMMING ERROR

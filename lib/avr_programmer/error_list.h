@@ -28,7 +28,7 @@
 
 	// SD CARD ERROR
 	extern const char* const AVP_SD_ERRORS[];
-
+	extern const char* const AVP_ERR_SD_PARTIAL_WRITE;
 
 	// PROGRAMMING ERROR
 

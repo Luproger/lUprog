@@ -207,10 +207,27 @@ void spi_fl_Write(){
 	
 }
 void spi_fl_Read(){
+	uint32_t word_addr = 0;
+
+	DEBUG_PRINTF("START READ FLASH\n");
+	for(uint16_t curPage = 0; curPage < avp_curParam->mcu->number_of_flash_pages; curPage++){
+		for(uint16_t byte_index = 0; byte_index < f_page_size_b; byte_index+=2, word_addr++){
+			flash_buf[byte_index] = flReadByte(0, word_addr);		// low 
+			flash_buf[byte_index + 1] = flReadByte(1, word_addr);	// high 
+
+			// ProgressBar
+			//avr_prog->prog_cb(avp_curParam->mcu->number_of_flash_pages, curPage);
+		}
+
+		// Пишем буфер в файл
+		if(!SD_transferFunc()) return;
+	}
+
+	DEBUG_PRINTF("END READ FLASH\n");
 }
 void spi_fl_Verify(){
 	uint32_t word_addr = 0;
-	uint16_t page_word = 0;
+	uint16_t byte_index = 0;
 
 	uint8_t verify_buf[4];
 
@@ -225,9 +242,9 @@ void spi_fl_Verify(){
 			DEBUG_PRINTF("FILE ENDED BEFORE FLASH!\n");
 			return;
 		}
-		for(page_word = 0; page_word < avp_curParam->mcu->flash_page_size; word_addr++, page_word++){
-			verify_buf[0] = flash_buf[page_word *2];		// low orig
-			verify_buf[1] = flash_buf[page_word *2 + 1];	// high orig
+		for(byte_index = 0; byte_index < f_page_size_b; word_addr++, byte_index+=2){
+			verify_buf[0] = flash_buf[byte_index];		// low orig
+			verify_buf[1] = flash_buf[byte_index + 1];	// high orig
 
 			verify_buf[2] = flReadByte(0, word_addr);		// low read
 			verify_buf[3] = flReadByte(1, word_addr);		// high read

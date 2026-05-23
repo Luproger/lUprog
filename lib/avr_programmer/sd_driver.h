@@ -12,7 +12,7 @@
 typedef bool (*sd_func_t)();
 
 extern sd_func_t SD_transferFunc;
-
+extern uint8_t SD_fileMode;
 avp_ftype get_ftype(char *fpath);
 void SD_SetFunc(avp_ftype ftype);
 
