@@ -45,7 +45,7 @@ typedef enum{
 	// BOOTLOADER
 }avp_action;
 
-typedef void (*exCallback)(uint32_t maxVal, uint32_t curVal);
+typedef void (*exCallback)(uint16_t maxVal, uint16_t curVal);
 typedef void (*avpFunc)(void);
 typedef void (*errCalback)(const char* err_type, char* message);
 typedef void (*onSuccess)(void);

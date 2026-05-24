@@ -13,7 +13,7 @@ spi_driver.c:158:6:spi_prog_init	8	static
 spi_driver.c:170:6:spi_prog_deinit	8	static
 spi_driver.c:177:6:spi_fl_Write	40	static
 spi_driver.c:209:6:spi_fl_Read	48	static
-spi_driver.c:228:6:spi_fl_Verify	56	static
+spi_driver.c:228:6:spi_fl_Verify	64	static
 spi_driver.c:270:6:spi_ee_Write	0	static
 spi_driver.c:271:6:spi_ee_Read	0	static
 spi_driver.c:272:6:spi_ee_Verify	0	static

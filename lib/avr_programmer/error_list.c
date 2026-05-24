@@ -5,9 +5,9 @@
  *      Author: Luproger
  */
 #include "error_list.h"
-    const char* const AVP_ERR_INIT = "INIT ERR: ";
-    const char* const AVP_ERR_SD = "SD ERR: ";
-    const char* const AVP_ERR_PROG = "PROG ERR: ";
+    const char* const AVP_ERR_INIT = "INIT ERR";
+    const char* const AVP_ERR_SD = "SD ERR";
+    const char* const AVP_ERR_PROG = "PROG ERR";
 	
     
 	// INIT SESSION
@@ -48,5 +48,5 @@
 
 	// PROGRAMMING ERROR
 	const char* const AVP_ERR_ENTER_PMODE = "ENTER_PMODE";
-	const char* const AVP_ERR_CHECK_SIG = "CHECK_SIG\nREAD SIG: 0x%02X 0x%02X 0x%02X";
-    const char* const AVP_ERR_VERIFY = "VERIFY IN 0x%04X\nEXP: 0x%02X GOT: 0x%02X";
+	const char* const AVP_ERR_CHECK_SIG = "CHECK_SIG\nREAD SIG:\n0x%02X 0x%02X 0x%02X";
+    const char* const AVP_ERR_VERIFY = "VERIFY IN 0x%04X\nEXP: 0x%02X\nGOT: 0x%02X";

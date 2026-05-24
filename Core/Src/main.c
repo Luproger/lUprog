@@ -81,17 +81,87 @@ static void MX_I2C1_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 
-void temp_callback(uint32_t maxVal, uint32_t curVal){
-  DEBUG_PRINTF("PROGRESS: %d PAGES\n", curVal);
+void ssd1306_WriteMultiLineString(char* str, uint8_t x, uint8_t y) {
+    uint8_t start_x = x;
+
+    ssd1306_SetCursor(x, y);
+
+    while (*str) {
+        if (*str == '\n') {
+            x = start_x;        // Возврат к началу строки
+            y += 10;            // Смещение вниз на высоту шрифта + интервал
+            ssd1306_SetCursor(x, y);
+        }
+        else {
+            if (ssd1306_WriteChar(*str, Font_6x8, White) != *str) {
+                return;
+            }
+            x += 6;
+        }
+        str++;
+    }
+}
+
+void temp_callback(uint16_t maxVal, uint16_t curVal){
+  static uint8_t oldProcent = 255;
+  static uint8_t procent;
+  static char buf[4];
+
+  if (curVal > maxVal) curVal = maxVal; 
+  procent =  (curVal * 100) / maxVal;
+
+  if(procent % 10 == 0 && procent != oldProcent){
+	DEBUG_PRINTF("PROGRESS: %d\n", procent);
+    oldProcent = procent;
+    
+    if (procent == 100) {
+        buf[0] = '1';
+        buf[1] = '0';
+        buf[2] = '0';
+        buf[3] = '\0';
+    } else if (procent == 0) {
+        buf[0] = '0';
+        buf[1] = '\0';
+    } else {
+        buf[0] = (procent / 10) + '0';
+        buf[1] = '0';
+        buf[2] = '\0';
+    }
+
+    ssd1306_DrawRectangle(13, 15, 114, 35, White);
+
+	ssd1306_FillRectangle(13, 15, 13 + procent, 35, White);
+	ssd1306_SetCursor(50, 40);
+
+	ssd1306_WriteString(buf, Font_11x18, White);
+	ssd1306_WriteString("%", Font_11x18, White);
+
+    ssd1306_UpdateScreen();
+  }
 }
 void temp_err_cb(const char* err_type, char* message){
   DEBUG_PRINTF("\n");
   DEBUG_PRINTF(err_type);
   DEBUG_PRINTF(message);
   DEBUG_PRINTF("\n");
+
+  ssd1306_Fill(Black);
+  ssd1306_FillRectangle(10, 0, 117, 10, White);
+  ssd1306_SetCursor(35, 2);
+  ssd1306_WriteString(err_type, Font_6x8, Black);
+
+  ssd1306_WriteMultiLineString(message, 10, 20);
+  ssd1306_UpdateScreen();
+
+
 }
 void temp_sucs_cb(){
-  DEBUG_PRINTF("SUCCESS FINISHED!\n");
+	DEBUG_PRINTF("SUCCESS FINISHED!\n");
+	ssd1306_Fill(Black);
+	ssd1306_SetCursor(20, 25);
+	ssd1306_WriteString("SACCESS!!", Font_11x18, White);
+	ssd1306_UpdateScreen();
+	HAL_Delay(500);
 }
 /* USER CODE END PFP */
 
@@ -105,7 +175,7 @@ button_t btnOK;
 encoder_t encoder;
 
 static const avp_init_t avrprog = {
-	.prog_cb = &temp_callback,
+	.prog_cb = temp_callback,
 	.err_cb = &temp_err_cb,
 	.sucs_cb = &temp_sucs_cb,
 	.hspi = &hspi2,
@@ -116,7 +186,7 @@ static const avp_init_t avrprog = {
 avp_param_t param;
 avp_spi_conf spiConf = {
 	.sck_auto = false,
-	.sck_div = SPI_BAUDRATEPRESCALER_128
+	.sck_div = SPI_BAUDRATEPRESCALER_64
 };
 avp_action avpAction;
 
@@ -164,7 +234,64 @@ void menuTick(){
 			ssd1306_WriteString("START", Font_11x18, Black);
 			ssd1306_UpdateScreen();
 		}
-		if(btnIsClick(&btnOK)) changeMenu(SET_MCU);
+		if(btnIsClick(&btnOK)) changeMenu(SET_ACTION);
+		break;
+
+	case SET_ACTION:
+		if(firstInState){
+			firstInState = 0;
+			updateScreen = 1;
+			cursor = 0;
+
+			ssd1306_Fill(Black);
+			ssd1306_FillRectangle(10, 0, 117, 10, White);
+			ssd1306_SetCursor(35, 2);
+			ssd1306_WriteString("SET ACTION", Font_6x8, Black);
+			ssd1306_SetCursor(18, 18);
+			ssd1306_WriteString("READ", Font_6x8, White);
+			ssd1306_SetCursor(18, 30);
+			ssd1306_WriteString("WRITE", Font_6x8, White);
+			ssd1306_SetCursor(18, 42);
+			ssd1306_WriteString("VERIFY", Font_6x8, White);
+			ssd1306_UpdateScreen();
+		}
+
+		if(updateScreen){
+		  updateScreen = 0;
+		  ssd1306_FillRectangle(0, 12, 16, 127, Black);
+
+		  switch(cursor){
+			case 0:
+			  ssd1306_SetCursor(10, 18);
+			  avpAction = ACT_FL_READ;
+			  break;
+			case 1:
+			  ssd1306_SetCursor(10, 30);
+			  avpAction = ACT_FL_WRITE;
+			  break;
+
+			case 2:
+			  ssd1306_SetCursor(10, 42);
+			  avpAction = ACT_FL_VERIFY;
+			  break;
+		  }
+		  ssd1306_WriteString(">", Font_6x8, White);
+		  ssd1306_UpdateScreen();
+		}
+
+		if(btnIsClick(&btnOK)){
+			changeMenu(SET_MCU);
+			DEBUG_PRINTF("SET_ACTION: %d\n", (uint8_t) avpAction);
+		}
+
+		if(encIsCW(&encoder) && cursor < 2){
+		  cursor++;
+		  updateScreen = 1;
+		}
+		if(encIsCCW(&encoder) && cursor > 0){
+		  cursor--;
+		  updateScreen = 1;
+		}
 		break;
 
 	case SET_MCU:
@@ -194,7 +321,7 @@ void menuTick(){
 		}
 		if(btnIsClick(&btnOK)){
 			closeChipList();
-			changeMenu(SET_ACTION);
+			changeMenu(SET_FILE);
 			DEBUG_PRINTF("SET MCU: ");
 			DEBUG_PRINTF(mcuName);
 			DEBUG_PRINTF("\n");
@@ -207,64 +334,6 @@ void menuTick(){
 			decChip();
 			updateScreen = 1;
 		}
-
-		break;
-
-	case SET_ACTION:
-		if(firstInState){
-			firstInState = 0;
-      updateScreen = 1;
-			cursor = 0;
-
-			ssd1306_Fill(Black);
-			ssd1306_FillRectangle(10, 0, 117, 10, White);
-			ssd1306_SetCursor(35, 2);
-			ssd1306_WriteString("SET ACTION", Font_6x8, Black);
-			ssd1306_SetCursor(18, 18);
-			ssd1306_WriteString("READ", Font_6x8, White);
-			ssd1306_SetCursor(18, 30);
-			ssd1306_WriteString("WRITE", Font_6x8, White);
-			ssd1306_SetCursor(18, 42);
-			ssd1306_WriteString("VERIFY", Font_6x8, White);
-			ssd1306_UpdateScreen();
-		}
-
-    if(updateScreen){
-      updateScreen = 0;
-      ssd1306_FillRectangle(0, 12, 16, 127, Black);
-
-      switch(cursor){
-        case 0:
-          ssd1306_SetCursor(10, 18);
-          avpAction = ACT_FL_READ;
-          break;
-        case 1:
-          ssd1306_SetCursor(10, 30);
-          avpAction = ACT_FL_WRITE;
-          break;
-
-        case 2:
-          ssd1306_SetCursor(10, 42);
-          avpAction = ACT_FL_VERIFY;
-          break;
-      }
-      ssd1306_WriteString(">", Font_6x8, White);
-      ssd1306_UpdateScreen();
-    }
-
-    if(btnIsClick(&btnOK)){
-		changeMenu(SET_FILE);
-		DEBUG_PRINTF("SET_ACTION: %d\n", (uint8_t) avpAction);
-	}
-
-    if(encIsCW(&encoder) && cursor < 2){
-      cursor++;
-      updateScreen = 1;
-    }
-    if(encIsCCW(&encoder) && cursor > 0){
-      cursor--;
-      updateScreen = 1;
-    }
 
 		break;
 
@@ -330,6 +399,8 @@ void menuTick(){
 		ssd1306_UpdateScreen();
 
 		AVP_Execute(avpAction, &param);
+
+		while(!btnIsClick(&btnOK)) btnTick(&btnOK);
 		changeMenu(MAIN_SCREEN);
 
 		break;
