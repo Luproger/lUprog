@@ -172,6 +172,7 @@ static
 void despiselect (void)
 {
 	CS_HIGH();		/* Set CS# high */
+	HAL_Delay(10);
 	xchg_spi(0xFF);	/* Dummy clock (force DO hi-z for multiple slave SPI) */
 
 }
@@ -330,7 +331,6 @@ inline DSTATUS USER_SPI_initialize (
 	FCLK_SLOW();
 	for (n = 10; n; n--) xchg_spi(0xFF);	/* Send 80 dummy clocks */
 
-	ty = 0;
 	if (send_cmd(CMD0, 0) == 1) {			/* Put the card SPI/Idle state */
 		SPI_Timer_On(1000);					/* Initialization timeout = 1 sec */
 		if (send_cmd(CMD8, 0x1AA) == 1) {	/* SDv2? */

@@ -19,16 +19,18 @@ uint8_t chip_index;
 #define CHIP_LINE_SIZE 52
 
 
-void openChipList(){
+bool openChipList(){
 	FRESULT res;
 
 	res = f_open(&chipFile, (char*) "system/LIST.TXT", FA_READ);
 	if(res!=FR_OK){
 		DEBUG_PRINTF("NOT OPEN FILE MCU LIST! \n");
+		return 0;
 	}
 	DEBUG_PRINTF("Open file mcu list! \n");
 	chip_index=0;
 	readChip();
+	return 1;
 }
 void closeChipList(){
 	DEBUG_PRINTF("Close file mcu list! \n");

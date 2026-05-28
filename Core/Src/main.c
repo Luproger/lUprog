@@ -284,11 +284,11 @@ void menuTick(){
 			DEBUG_PRINTF("SET_ACTION: %d\n", (uint8_t) avpAction);
 		}
 
-		if(encIsCW(&encoder) && cursor < 2){
+		if(encIsCCW(&encoder) && cursor < 2){
 		  cursor++;
 		  updateScreen = 1;
 		}
-		if(encIsCCW(&encoder) && cursor > 0){
+		if(encIsCW(&encoder) && cursor > 0){
 		  cursor--;
 		  updateScreen = 1;
 		}
@@ -297,7 +297,13 @@ void menuTick(){
 	case SET_MCU:
 		if(firstInState){
 			firstInState = 0;
-			openChipList();
+			ssd1306_Fill(Black);
+			if(!openChipList()){
+				ssd1306_SetCursor(0, 26);
+				ssd1306_WriteString("ERR_OPEN_MCU", Font_11x18, White);
+				ssd1306_UpdateScreen();
+				while(1);
+			}
 			updateScreen = 1;
 
 			ssd1306_Fill(Black);
@@ -376,12 +382,12 @@ void menuTick(){
 			changeMenu(ACTION);
 		}
 
-	    if(encIsCW(&encoder) && cursor < FILE_LIST_NUM - 1){
+	    if(encIsCCW(&encoder) && cursor < FILE_LIST_NUM - 1){
 	      cursor++;
 	      updateScreen = 1;
 	      if(cursor - topIndx >= 3) topIndx++;
 	    }
-	    if(encIsCCW(&encoder) && cursor > 0){
+	    if(encIsCW(&encoder) && cursor > 0){
 	      cursor--;
 	      updateScreen = 1;
 	      if(cursor < topIndx) topIndx--;
@@ -468,14 +474,14 @@ int main(void)
 
   fres = f_mount(&fs, "", 1);
   if(fres != FR_OK){
-	 DEBUG_PRINTF("SD Card mount error!");
-  ssd1306_SetCursor(0, 26);
-  ssd1306_WriteString("SD_MOUNT_ER", Font_11x18, White);
-  ssd1306_UpdateScreen();
+	DEBUG_PRINTF("SD MOUNT_ERR code: %d", fres);
+	ssd1306_SetCursor(0, 26);
+	ssd1306_WriteString("SD_MOUNT_ER", Font_11x18, White);
+	ssd1306_UpdateScreen();
 
-	 while(1);
+	while(1);
   }
-  DEBUG_PRINTF("SD Card mounted\n");
+  DEBUG_PRINTF("SD MOUNTED\n");
 
   AVP_Set_SPI(&spiConf);
 

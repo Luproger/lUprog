@@ -9,6 +9,7 @@
 #define MCU_H_
 
 #include "stdint.h"
+#include "stdbool.h"
 
 typedef struct{
 	uint8_t ee_reserved:1;
@@ -51,7 +52,7 @@ void decChip();
 void incChip();
 void readChip();
 mcu_t *getChip();
-void openChipList();
+bool openChipList();
 void closeChipList();
 
 #endif /* MCU_H_ */
